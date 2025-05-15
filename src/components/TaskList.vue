@@ -35,6 +35,16 @@
       @showToast="showToastMessage"
     />
 
+    <!-- Edit Task Modal -->
+    <TaskForm
+      v-if="showEditModal"
+      mode="edit"
+      :taskToEdit="taskToEdit"
+      @close="showEditModal = false"
+      @success="loadTasks()"
+      @showToast="showToastMessage"
+    />
+
     <!-- Table Structure Always Present -->
     <table class="task-table desktop-table">
       <thead>
@@ -286,6 +296,8 @@ const isDeletingTask = ref(false)
 const showToast = ref(false)
 const toastMessage = ref('')
 const toastType = ref<'success' | 'error'>('success')
+const showEditModal = ref(false)
+const taskToEdit = ref<Task | null>(null)
 
 const loadTasks = async () => {
   loading.value = true
@@ -339,9 +351,9 @@ const getStatusColor = (status: string): string => {
   }
 }
 
-const handleEdit = async (task: Task) => {
-  // TODO: Implement edit functionality
-  console.log('Edit task:', task)
+const handleEdit = (task: Task) => {
+  taskToEdit.value = task
+  showEditModal.value = true
 }
 
 const showToastMessage = (message: string, type: 'success' | 'error' = 'success') => {

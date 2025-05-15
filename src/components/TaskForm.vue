@@ -3,9 +3,15 @@
     <div class="modal">
       <div class="modal-header">
         <div class="header-content">
-          <h2>Create New Task</h2>
+          <h2>{{ mode === 'edit' ? 'Edit Task' : 'Create New Task' }}</h2>
           <div class="description-container">
-            <p class="header-description">Add a new task with details and track its progress</p>
+            <p class="header-description">
+              {{
+                mode === 'edit'
+                  ? 'Update task details and track progress'
+                  : 'Add a new task with details and track its progress'
+              }}
+            </p>
             <div class="tooltip-container">
               <button
                 class="info-icon"
@@ -92,9 +98,9 @@
         <button type="submit" class="submit-btn" :disabled="isSubmitting">
           <div v-if="isSubmitting" class="spinner-container">
             <div class="spinner"></div>
-            <span>Creating...</span>
+            <span>{{ mode === 'edit' ? 'Updating...' : 'Creating...' }}</span>
           </div>
-          <span v-else>Create Task</span>
+          <span v-else>{{ mode === 'edit' ? 'Update Task' : 'Create Task' }}</span>
         </button>
       </form>
     </div>
@@ -115,7 +121,17 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
-import { taskService } from '../services/tasks'
+import { taskService, type Task } from '../services/tasks'
+
+interface Props {
+  mode?: 'create' | 'edit'
+  taskToEdit?: Task
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  mode: 'create',
+  taskToEdit: undefined,
+})
 
 interface TaskForm {
   title: string
@@ -124,12 +140,14 @@ interface TaskForm {
   status: 'pending' | 'in_progress' | 'completed'
 }
 
-const task = reactive<TaskForm>({
-  title: '',
-  description: '',
-  due_date: '',
-  status: 'pending',
-})
+const initialTask = {
+  title: props.taskToEdit?.title || '',
+  description: props.taskToEdit?.description || '',
+  due_date: props.taskToEdit?.due_date || '',
+  status: props.taskToEdit?.status || 'pending',
+}
+
+const task = reactive<TaskForm>({ ...initialTask })
 
 const showTooltip = ref(false)
 const showConfirmDialog = ref(false)
@@ -194,25 +212,32 @@ const handleSubmit = async () => {
     isSubmitting.value = true
 
     try {
-      await taskService.createTask({
-        title: task.title,
-        description: task.description,
-        due_date: task.due_date,
-        status: task.status,
-      })
+      if (props.mode === 'edit' && props.taskToEdit) {
+        await taskService.updateTask(props.taskToEdit.id, {
+          title: task.title,
+          description: task.description,
+          due_date: task.due_date,
+          status: task.status,
+        })
+        emit('showToast', 'Task updated successfully', 'success')
+      } else {
+        await taskService.createTask({
+          title: task.title,
+          description: task.description,
+          due_date: task.due_date,
+          status: task.status,
+        })
+        emit('showToast', 'Task created successfully', 'success')
+      }
 
-      // Reset form
-      task.title = ''
-      task.description = ''
-      task.due_date = ''
-      task.status = 'pending'
-
-      // Emit events
       emit('success')
-      emit('showToast', 'Task created successfully', 'success')
       emit('close')
     } catch (error) {
-      emit('showToast', 'Failed to create task', 'error')
+      emit(
+        'showToast',
+        props.mode === 'edit' ? 'Failed to update task' : 'Failed to create task',
+        'error',
+      )
     } finally {
       isSubmitting.value = false
     }

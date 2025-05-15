@@ -33,7 +33,7 @@
       mode="create"
       @close="showModal = false"
       @success="loadTasks()"
-      @showToast="showToastMessage"
+      @showToast="showToast"
     />
 
     <!-- Edit Task Modal -->
@@ -43,7 +43,7 @@
       :taskToEdit="taskToEdit"
       @close="showEditModal = false"
       @success="loadTasks()"
-      @showToast="showToastMessage"
+      @showToast="showToast"
     />
 
     <!-- Table Structure Always Present -->
@@ -175,7 +175,7 @@
     </table>
 
     <!-- Modern Pagination -->
-    <div v-if="tasks.length > itemsPerPage" class="pagination">
+    <div v-if="tasks.length > ITEMS_PER_PAGE" class="pagination">
       <button
         class="page-btn"
         :disabled="currentPage === 1"
@@ -344,7 +344,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+// Imports
+import { ref, computed, watch, onMounted } from 'vue'
 import { taskService, type Task } from '@/services/tasks'
 import TaskForm from './TaskForm.vue'
 import { useDeleteModal } from '@/composables/useDeleteModal'
@@ -354,6 +355,20 @@ import { useToast } from '@/composables/useToast'
 const { showDeleteModal, itemToDelete, closeDeleteModal, openDeleteModal } = useDeleteModal()
 const { toast, showToast } = useToast()
 
+// Constants
+const ITEMS_PER_PAGE = 5
+const STATUS_MAP = {
+  pending: 'Pending',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+} as const
+
+const STATUS_COLORS = {
+  pending: '#FF4B4B',
+  in_progress: '#FFB800',
+  completed: '#00B884',
+} as const
+
 // State
 const tasks = ref<Task[]>([])
 const loading = ref(true)
@@ -361,33 +376,28 @@ const error = ref<string | null>(null)
 const showModal = ref(false)
 const showEditModal = ref(false)
 const taskToEdit = ref<Task | null>(null)
+const currentPage = ref(1)
 const showTooltip = ref(false)
 
-// Pagination
-const currentPage = ref(1)
-const itemsPerPage = 5
-const totalPages = computed(() => Math.ceil(tasks.value.length / itemsPerPage))
+// Computed
+const totalPages = computed(() => Math.ceil(tasks.value.length / ITEMS_PER_PAGE))
 const paginatedTasks = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
+  const start = (currentPage.value - 1) * ITEMS_PER_PAGE
+  const end = start + ITEMS_PER_PAGE
   return tasks.value.slice(start, end)
 })
 
-// Methods
+// Task Operations
 const loadTasks = async () => {
   loading.value = true
   error.value = null
   try {
     tasks.value = await taskService.getTasks()
-  } catch (error) {
+  } catch (_err: unknown) {
     error.value = 'Failed to load tasks'
   } finally {
     loading.value = false
   }
-}
-
-const handlePageChange = (page: number) => {
-  currentPage.value = page
 }
 
 const handleEdit = (task: Task) => {
@@ -406,8 +416,7 @@ const confirmDelete = async () => {
     await taskService.deleteTask(itemToDelete.value.id)
     await loadTasks()
 
-    // Check if current page is now empty and not the first page
-    const lastPage = Math.ceil(tasks.value.length / itemsPerPage)
+    const lastPage = Math.ceil(tasks.value.length / ITEMS_PER_PAGE)
     if (currentPage.value > lastPage && currentPage.value > 1) {
       currentPage.value = lastPage
     }
@@ -416,12 +425,12 @@ const confirmDelete = async () => {
     setTimeout(() => {
       showToast('Task deleted successfully', 'success')
     }, 100)
-  } catch (error) {
+  } catch (_err: unknown) {
     showToast('Failed to delete task', 'error')
   }
 }
 
-// Utility functions
+// Utility Functions
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -431,21 +440,11 @@ const formatDate = (date: string) => {
 }
 
 const formatStatus = (status: string): string => {
-  const statusMap = {
-    pending: 'Pending',
-    in_progress: 'In Progress',
-    completed: 'Completed',
-  }
-  return statusMap[status as keyof typeof statusMap] || status
+  return STATUS_MAP[status as keyof typeof STATUS_MAP] || status
 }
 
 const getStatusColor = (status: string): string => {
-  const colors = {
-    pending: '#FF4B4B',
-    in_progress: '#FFB800',
-    completed: '#00B884',
-  }
-  return colors[status as keyof typeof colors] || '#64748b'
+  return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || '#64748b'
 }
 
 const truncateDescription = (description: string | null): string => {
@@ -461,10 +460,13 @@ const isOverdue = (dueDate: string): boolean => {
   return taskDueDate < today
 }
 
+// Pagination
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+}
+
 // Lifecycle
-onMounted(() => {
-  loadTasks()
-})
+onMounted(loadTasks)
 
 // Watchers
 watch([showModal, showEditModal], ([newShowModal, newShowEditModal]) => {
@@ -950,49 +952,26 @@ tr td:last-child {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
   display: flex;
-  justify-content: center;
-  align-items: flex-start; /* Changed from center */
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
   z-index: 1000;
-  backdrop-filter: blur(3px);
-  padding: 2rem;
-  overflow-y: auto; /* Enable scrolling */
-}
-
-/* Ensure table is scrollable on smaller screens */
-.task-table-container {
-  width: 100%;
-  overflow-x: auto;
-  margin-top: 1rem;
-}
-
-.task-table {
-  width: 100%;
-  min-width: 800px; /* Ensure minimum width */
-}
-
-/* When modal is open, prevent main content scroll but keep it visible */
-body.modal-open {
-  overflow: hidden;
-  padding-right: 15px; /* Prevent layout shift */
 }
 
 .modal {
-  background: #1a2634;
-  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 16px;
   padding: 2rem;
   width: 90%;
   max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  transform: scale(1);
-  transition: transform 0.2s ease;
-}
-
-.modal:hover {
-  transform: scale(1.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transform: translateY(0); /* Reset any transform */
+  margin: 0; /* Reset any margin */
 }
 
 .modal-content {

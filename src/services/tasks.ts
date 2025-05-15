@@ -4,9 +4,9 @@ export interface Task {
   id: number
   title: string
   description: string
-  status: 'todo' | 'in_progress' | 'completed'
+  status: 'pending' | 'in_progress' | 'completed'
+  due_date: string
   created_at: string
-  updated_at: string
 }
 
 const getAuthHeader = () => {

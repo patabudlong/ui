@@ -40,7 +40,7 @@
               ?
             </button>
             <div class="tooltip" v-if="showTooltip">
-              Create, edit, and track your tasks efficiently. Each task can be marked as TODO, IN
+              Create, edit, and track your tasks efficiently. Each task can be marked as PENDING, IN
               PROGRESS, or COMPLETED. Use the status indicators to monitor progress and the action
               buttons to manage tasks.
             </div>

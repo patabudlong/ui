@@ -1,26 +1,47 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { authService } from '@/services/auth'
 
 const router = useRouter()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const isConnected = ref(false)
+const loading = ref(false)
+const showErrorDialog = ref(false)
 
 const handleLogin = async () => {
-  // Simple auth check
-  if (email.value === 'test@test.com' && password.value === 'pass') {
+  try {
+    loading.value = true
+    await authService.login(email.value, password.value)
     localStorage.setItem('isAuthenticated', 'true')
     router.push('/')
-  } else {
-    alert('Invalid credentials')
+  } catch (_error) {
+    showErrorDialog.value = true
+  } finally {
+    loading.value = false
   }
 }
+
+onMounted(async () => {
+  try {
+    await authService.checkConnection()
+    isConnected.value = true
+    // console.log('Connected to server')
+  } catch (_error) {
+    isConnected.value = false
+    // alert('Cannot connect to server')
+  }
+})
 </script>
 
 <template>
   <div class="login-view">
     <div class="login-card">
+      <div class="connection-status" :class="{ connected: isConnected }">
+        {{ isConnected ? '🟢 Connected' : '🔴 Not Connected' }}
+      </div>
       <div class="logo">
         <img src="@/assets/sapere-logo.PNG" alt="Sapere Logo" />
       </div>
@@ -84,13 +105,28 @@ const handleLogin = async () => {
           <a href="#" class="forgot-password">Forgot password?</a>
         </div>
 
-        <button type="submit" class="login-button">Sign In</button>
+        <button type="submit" class="login-button" :disabled="loading">
+          {{ loading ? 'Signing in...' : 'Sign In' }}
+        </button>
 
         <div class="signup-prompt">
           <span>Don't have an account?</span>
           <a href="#" class="signup-link">Sign up</a>
         </div>
       </form>
+    </div>
+
+    <!-- Error Dialog -->
+    <div v-if="showErrorDialog" class="dialog-overlay">
+      <div class="dialog">
+        <div class="dialog-content">
+          <h2>Login Failed</h2>
+          <p>Invalid email or password. Please try again.</p>
+          <div class="dialog-actions">
+            <button class="confirm-btn" @click="showErrorDialog = false">OK</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -275,6 +311,18 @@ input::placeholder {
   background: transparent;
 }
 
+.connection-status {
+  position: absolute;
+  top: 1rem;
+  right: 2rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.connection-status.connected {
+  color: #4caf50;
+}
+
 @media (max-width: 768px) {
   .login-card {
     padding: 2rem;
@@ -301,5 +349,62 @@ input::placeholder {
   .forgot-password {
     margin-left: 1.8rem;
   }
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: #1a2634;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dialog-content {
+  text-align: center;
+}
+
+.dialog-content h2 {
+  margin: 0 0 1rem;
+  color: white;
+  font-size: 1.5rem;
+}
+
+.dialog-content p {
+  margin: 0 0 1.5rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  background: #ff8a00;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.confirm-btn:hover {
+  background: #ff9d2f;
 }
 </style>

@@ -1,14 +1,15 @@
 <template>
   <nav class="navbar">
     <div class="navbar-brand">
-      <router-link to="/" class="logo"> Your Logo </router-link>
+      <router-link to="/" class="logo">
+        <img src="@/assets/sapere-logo.png" alt="Sapere Logo" class="logo-image" />
+      </router-link>
     </div>
 
     <div class="nav-links">
-      <router-link to="/" class="nav-link">Home</router-link>
-      <router-link to="/about" class="nav-link">About</router-link>
-      <router-link to="/services" class="nav-link">Services</router-link>
-      <router-link to="/contact" class="nav-link">Contact</router-link>
+      <router-link to="/" class="nav-link">Dashboard</router-link>
+      <router-link to="/tasks" class="nav-link">Tasks</router-link>
+      <div class="profile-icon">JT</div>
       <button class="logout-btn">Logout</button>
     </div>
   </nav>
@@ -35,6 +36,7 @@ export default defineComponent({
   left: 0;
   background-color: transparent;
   box-shadow: none;
+  transition: all 0.3s ease;
 }
 
 .navbar-brand {
@@ -58,12 +60,13 @@ export default defineComponent({
   text-decoration: none;
   color: white;
   font-weight: 500;
-  transition: color 0.3s ease;
   font-size: 18px;
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* Remove the hover state completely */
 .nav-link:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: white;
 }
 
 /* Responsive design */
@@ -86,10 +89,34 @@ export default defineComponent({
   cursor: pointer;
   font-weight: 500;
   font-size: 18px;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .logout-btn:hover {
   background-color: #e08a0f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo-image {
+  height: 60px;
+  width: auto;
+  transition: all 0.3s ease;
 }
 </style>

@@ -38,6 +38,7 @@
             required
             placeholder="Enter task title"
             :class="{ error: errors.title }"
+            :disabled="isSubmitting"
           />
           <span v-if="errors.title" class="error-message">{{ errors.title }}</span>
         </div>
@@ -49,6 +50,7 @@
             v-model="task.description"
             rows="4"
             placeholder="Enter task description"
+            :disabled="isSubmitting"
           ></textarea>
         </div>
 
@@ -63,6 +65,7 @@
             v-model="task.dueDate"
             required
             :class="{ error: errors.dueDate }"
+            :disabled="isSubmitting"
           />
           <span v-if="errors.dueDate" class="error-message">{{ errors.dueDate }}</span>
         </div>
@@ -72,7 +75,13 @@
             Status
             <span class="required-indicator">*</span>
           </label>
-          <select id="status" v-model="task.status" required :class="{ error: errors.status }">
+          <select
+            id="status"
+            v-model="task.status"
+            required
+            :class="{ error: errors.status }"
+            :disabled="isSubmitting"
+          >
             <option value="TODO">To Do</option>
             <option value="IN_PROGRESS">In Progress</option>
             <option value="COMPLETED">Completed</option>
@@ -80,7 +89,13 @@
           <span v-if="errors.status" class="error-message">{{ errors.status }}</span>
         </div>
 
-        <button type="submit" class="submit-btn">Create Task</button>
+        <button type="submit" class="submit-btn" :disabled="isSubmitting">
+          <div v-if="isSubmitting" class="spinner-container">
+            <div class="spinner"></div>
+            <span>Creating...</span>
+          </div>
+          <span v-else>Create Task</span>
+        </button>
       </form>
     </div>
 
@@ -115,9 +130,10 @@ const initialTask = {
   status: 'TODO',
 }
 
-const task = reactive({ ...initialTask })
+const task = reactive<Task>({ ...initialTask })
 const showTooltip = ref(false)
 const showConfirmDialog = ref(false)
+const isSubmitting = ref(false)
 const errors = reactive({
   title: '',
   dueDate: '',
@@ -174,10 +190,22 @@ const validateForm = (): boolean => {
   return isValid
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (validateForm()) {
-    console.log('Task submitted:', task)
-    // Add your submission logic here
+    isSubmitting.value = true
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Close modal after successful submission
+      emit('close')
+
+      console.log('Task submitted:', task)
+      // Add your submission logic here
+    } finally {
+      isSubmitting.value = false
+    }
   }
 }
 
@@ -358,9 +386,39 @@ select option {
   margin-top: 2rem;
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.25rem;
 }
 
-.submit-btn:hover {
+.spinner-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.submit-btn:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.submit-btn:not(:disabled):hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
@@ -373,12 +431,12 @@ select option {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin: 0 0 15px 0;
 }
 
 .header-description {
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.95rem;
-  margin: 0;
 }
 
 .info-icon {
@@ -511,7 +569,17 @@ select option {
   .submit-btn {
     margin-top: 1.5rem;
     padding: 0.875rem;
-    font-size: 1rem;
+    min-height: 3rem;
+  }
+
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+  }
+
+  .spinner-container {
+    gap: 0.5rem;
   }
 
   .error-message {
@@ -748,5 +816,19 @@ select:invalid {
     padding: 0.75rem 1rem;
     flex: 1;
   }
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Optional: Add a subtle visual indicator for disabled state */
+input:disabled::placeholder,
+textarea:disabled::placeholder {
+  color: #94a3b8;
 }
 </style>

@@ -1,13 +1,48 @@
 <template>
   <div class="tasks">
-    <h1>Tasks</h1>
+    <div class="container">
+      <button class="new-task-btn" @click="showModal = true">New Task</button>
+      <TaskForm v-if="showModal" @close="showModal = false" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Empty script setup - add task-related logic here
+import { ref } from 'vue'
+import TaskForm from '@/components/TaskForm.vue'
+
+const showModal = ref(false)
 </script>
 
 <style scoped>
-/* Add your task-specific styles here */
+.tasks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+h1 {
+  margin-bottom: 3rem;
+  color: white;
+  text-align: center;
+  font-size: 2rem;
+}
+
+.new-task-btn {
+  background-color: #f89c1c;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 1rem;
+}
 </style>

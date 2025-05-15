@@ -1054,6 +1054,7 @@ svg {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
 .confirm-dialog {

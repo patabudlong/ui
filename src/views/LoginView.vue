@@ -5,18 +5,14 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const email = ref('')
 const password = ref('')
-const isLoading = ref(false)
 
 const handleLogin = async () => {
-  isLoading.value = true
-  try {
-    // TODO: Implement actual login logic
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+  // Simple auth check
+  if (email.value === 'test@test.com' && password.value === 'pass') {
+    localStorage.setItem('isAuthenticated', 'true')
     router.push('/')
-  } catch (error) {
-    console.error('Login failed:', error)
-  } finally {
-    isLoading.value = false
+  } else {
+    alert('Invalid credentials')
   }
 }
 </script>

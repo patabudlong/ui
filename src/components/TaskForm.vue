@@ -25,7 +25,7 @@
         <button class="close-btn" @click="$emit('close')">&times;</button>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="task-form">
+      <form @submit.prevent="handleSubmit" class="task-form" novalidate>
         <div class="form-group">
           <label for="title">
             Title
@@ -37,7 +37,9 @@
             v-model="task.title"
             required
             placeholder="Enter task title"
+            :class="{ error: errors.title }"
           />
+          <span v-if="errors.title" class="error-message">{{ errors.title }}</span>
         </div>
 
         <div class="form-group">
@@ -55,7 +57,14 @@
             Due Date
             <span class="required-indicator">*</span>
           </label>
-          <input type="date" id="dueDate" v-model="task.dueDate" required />
+          <input
+            type="date"
+            id="dueDate"
+            v-model="task.dueDate"
+            required
+            :class="{ error: errors.dueDate }"
+          />
+          <span v-if="errors.dueDate" class="error-message">{{ errors.dueDate }}</span>
         </div>
 
         <div class="form-group">
@@ -63,11 +72,12 @@
             Status
             <span class="required-indicator">*</span>
           </label>
-          <select id="status" v-model="task.status" required>
+          <select id="status" v-model="task.status" required :class="{ error: errors.status }">
             <option value="TODO">To Do</option>
             <option value="IN_PROGRESS">In Progress</option>
             <option value="COMPLETED">Completed</option>
           </select>
+          <span v-if="errors.status" class="error-message">{{ errors.status }}</span>
         </div>
 
         <button type="submit" class="submit-btn">Create Task</button>
@@ -94,10 +104,58 @@ const task = reactive<Task>({
 })
 
 const showTooltip = ref(false)
+const errors = reactive({
+  title: '',
+  dueDate: '',
+  status: '',
+})
+
+const validateForm = (): boolean => {
+  let isValid = true
+
+  // Reset errors
+  errors.title = ''
+  errors.dueDate = ''
+  errors.status = ''
+
+  // Title validation
+  if (!task.title.trim()) {
+    errors.title = 'Title is required'
+    isValid = false
+  } else if (task.title.length < 3) {
+    errors.title = 'Title must be at least 3 characters'
+    isValid = false
+  }
+
+  // Due date validation
+  if (!task.dueDate) {
+    errors.dueDate = 'Due date is required'
+    isValid = false
+  } else {
+    const selectedDate = new Date(task.dueDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    if (selectedDate < today) {
+      errors.dueDate = 'Due date cannot be in the past'
+      isValid = false
+    }
+  }
+
+  // Status validation
+  if (!task.status) {
+    errors.status = 'Status is required'
+    isValid = false
+  }
+
+  return isValid
+}
 
 const handleSubmit = () => {
-  console.log('Task submitted:', task)
-  // Add your submission logic here
+  if (validateForm()) {
+    console.log('Task submitted:', task)
+    // Add your submission logic here
+  }
 }
 </script>
 
@@ -111,9 +169,12 @@ const handleSubmit = () => {
   background: rgba(15, 23, 42, 0.8);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 1000;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(8px);
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .modal {
@@ -121,17 +182,18 @@ const handleSubmit = () => {
   border-radius: 24px;
   width: 90%;
   max-width: 800px;
-  padding: 2.5rem;
-  box-shadow:
-    0 8px 32px rgba(249, 115, 22, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  margin: auto;
+  position: relative;
 }
 
 .modal-header {
+  padding: 2.5rem 2.5rem 0;
+  background: inherit;
+  border-radius: 24px 24px 0 0;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2.5rem;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
 .modal-header h2 {
@@ -156,18 +218,22 @@ const handleSubmit = () => {
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
   background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .task-form {
-  width: 100%;
+  padding: 2.5rem;
+  padding-top: 1.5rem;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  position: relative;
 }
 
 .required-indicator {
@@ -258,9 +324,7 @@ select option {
 }
 
 .header-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex: 1;
 }
 
 .description-container {
@@ -329,13 +393,25 @@ select option {
 }
 
 @media (max-width: 768px) {
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
   .modal {
-    padding: 1.5rem;
-    margin: 1rem;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 24px 24px 0 0;
   }
 
   .modal-header {
-    margin-bottom: 2rem;
+    padding: 1.5rem 1.5rem 0;
+  }
+
+  .task-form {
+    padding: 1.5rem;
+    padding-top: 1rem;
   }
 
   .modal-header h2 {
@@ -343,7 +419,7 @@ select option {
   }
 
   .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   input,
@@ -365,5 +441,79 @@ select option {
     right: 5px;
     transform: none;
   }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1.25rem;
+  }
+}
+
+/* For very short screens */
+@media (max-height: 600px) {
+  .modal-overlay {
+    padding: 1rem;
+  }
+}
+
+/* For landscape mode */
+@media (max-width: 768px) and (orientation: landscape) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 1rem;
+  }
+}
+
+.error-message {
+  color: #811717;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: block;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+input:invalid,
+select:invalid {
+  border-color: #ef4444;
+  box-shadow:
+    0 2px 4px rgba(239, 68, 68, 0.1),
+    inset 0 2px 4px rgba(239, 68, 68, 0.05);
+}
+
+/* Adjust spacing when error is present */
+.form-group:has(.error-message) {
+  margin-bottom: 2rem;
+}
+
+/* Remove browser default invalid styles */
+input:invalid,
+select:invalid {
+  box-shadow: none;
+}
+
+/* Customize scrollbar for webkit browsers */
+.modal-overlay::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-overlay::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.modal-overlay::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.modal-overlay::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Firefox scrollbar styling */
+.modal-overlay {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
 }
 </style>

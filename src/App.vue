@@ -41,5 +41,6 @@ body {
 
 .main-content {
   padding-top: 120px; /* Adjust this value based on your navbar height */
+  width: 150%;
 }
 </style>

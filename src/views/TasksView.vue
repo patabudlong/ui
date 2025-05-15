@@ -1,13 +1,28 @@
 <template>
   <div class="tasks">
-    <h1>Tasks</h1>
+    <div class="container">
+      <TaskForm v-if="showModal" @close="showModal = false" />
+      <TaskList @showModal="showModal = true" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Empty script setup - add task-related logic here
+import { ref } from 'vue'
+import TaskForm from '@/components/TaskForm.vue'
+import TaskList from '@/components/TaskList.vue'
+
+const showModal = ref(false)
 </script>
 
 <style scoped>
-/* Add your task-specific styles here */
+.tasks {
+  padding: 0.25rem;
+}
+
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
 </style>

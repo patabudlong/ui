@@ -394,28 +394,120 @@ select option {
 
 @media (max-width: 768px) {
   .modal-overlay {
-    padding: 0;
-    align-items: flex-end;
+    padding: 1rem;
+    align-items: flex-start;
   }
 
   .modal {
     width: 100%;
     max-width: 100%;
     margin: 0;
-    border-radius: 24px 24px 0 0;
+    border-radius: 24px;
+    height: auto;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideDown 0.3s ease-out;
+  }
+
+  @keyframes slideDown {
+    from {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   .modal-header {
-    padding: 1.5rem 1.5rem 0;
-  }
-
-  .task-form {
-    padding: 1.5rem;
-    padding-top: 1rem;
+    padding: 1.25rem 1.25rem 0.75rem;
   }
 
   .modal-header h2 {
     font-size: 1.5rem;
+  }
+
+  .header-description {
+    font-size: 0.875rem;
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1.25rem;
+  }
+
+  .task-form {
+    padding: 1.25rem;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  label {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  input,
+  textarea,
+  select {
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+
+  textarea {
+    min-height: 100px;
+  }
+
+  .submit-btn {
+    margin-top: 1.5rem;
+    padding: 0.875rem;
+    font-size: 1rem;
+  }
+
+  .error-message {
+    font-size: 0.8rem;
+    margin-top: 0.375rem;
+  }
+
+  .tooltip {
+    width: 220px;
+    font-size: 0.8rem;
+    padding: 0.75rem;
+    right: 0;
+    left: auto;
+    transform: none;
+  }
+
+  .tooltip::after {
+    right: 10px;
+    left: auto;
+  }
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+  .modal-overlay {
+    padding: 0.75rem;
+  }
+
+  .modal {
+    max-height: 90vh;
+  }
+
+  .modal-header {
+    padding: 1rem 1rem 0.5rem;
+  }
+
+  .task-form {
+    padding: 1rem;
   }
 
   .form-group {
@@ -425,42 +517,47 @@ select option {
   input,
   textarea,
   select {
-    padding: 0.875rem 1rem;
-  }
-
-  .tooltip {
-    width: 240px;
-    font-size: 0.8rem;
-    left: auto;
-    right: 0;
-    transform: none;
-  }
-
-  .tooltip::after {
-    left: auto;
-    right: 5px;
-    transform: none;
-  }
-
-  .close-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 1.25rem;
+    padding: 0.75rem 0.875rem;
   }
 }
 
-/* For very short screens */
-@media (max-height: 600px) {
-  .modal-overlay {
-    padding: 1rem;
-  }
-}
-
-/* For landscape mode */
+/* Landscape mode */
 @media (max-width: 768px) and (orientation: landscape) {
   .modal-overlay {
-    align-items: flex-start;
     padding: 1rem;
+    align-items: flex-start;
+  }
+
+  .modal {
+    height: auto;
+    max-height: 90vh;
+    margin: 0 auto;
+  }
+
+  .task-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .form-group:nth-child(2) {
+    grid-column: span 2;
+  }
+
+  .submit-btn {
+    grid-column: span 2;
+  }
+}
+
+/* Very short screens */
+@media (max-height: 600px) {
+  .modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .modal {
+    max-height: 95vh;
   }
 }
 

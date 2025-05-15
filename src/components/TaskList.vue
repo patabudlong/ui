@@ -961,19 +961,22 @@ tr td:last-child {
 
 .toast {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 1rem 1.5rem;
   border-radius: 8px;
   color: white;
   font-weight: 500;
   cursor: pointer;
   z-index: 2000;
-  animation: slideIn 0.3s ease-out;
+  animation: slideDown 0.3s ease-out;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 300px;
+  justify-content: center;
 }
 
 .toast.success {
@@ -984,14 +987,22 @@ tr td:last-child {
   background: #ef4444;
 }
 
-@keyframes slideIn {
+@keyframes slideDown {
   from {
-    transform: translateX(100%);
+    transform: translate(-50%, -100%);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translate(-50%, 0);
     opacity: 1;
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .toast {
+    min-width: 90%;
+    margin: 0 auto;
   }
 }
 </style>

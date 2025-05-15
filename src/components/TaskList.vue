@@ -102,10 +102,20 @@
           </td>
         </tr>
         <template v-else>
-          <tr v-for="task in paginatedTasks" :key="task.id">
+          <tr
+            v-for="task in paginatedTasks"
+            :key="task.id"
+            :class="{ 'overdue-row': isOverdue(task.due_date) && task.status !== 'completed' }"
+          >
             <td>{{ task.title }}</td>
             <td>{{ task.description }}</td>
-            <td>{{ formatDate(task.due_date) }}</td>
+            <td>
+              <span
+                :class="{ 'overdue-date': isOverdue(task.due_date) && task.status !== 'completed' }"
+              >
+                {{ formatDate(task.due_date) }}
+              </span>
+            </td>
             <td>
               <span class="status-badge" :class="task.status">
                 <span
@@ -239,7 +249,12 @@
         </div>
       </div>
       <template v-else>
-        <div v-for="task in tasks" :key="task.id" class="task-card">
+        <div
+          v-for="task in tasks"
+          :key="task.id"
+          class="task-card"
+          :class="{ overdue: isOverdue(task.due_date) && task.status !== 'completed' }"
+        >
           <div class="card-header">
             <h3>{{ task.title }}</h3>
             <span class="status-badge" :class="task.status">
@@ -455,6 +470,14 @@ watch([showModal, showEditModal], ([newShowModal, newShowEditModal]) => {
     document.body.style.overflow = '' // Reset overflow
   }
 })
+
+const isOverdue = (dueDate: string): boolean => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // Reset time to start of day
+  const taskDueDate = new Date(dueDate)
+  taskDueDate.setHours(0, 0, 0, 0)
+  return taskDueDate < today
+}
 </script>
 
 <style scoped>
@@ -1171,5 +1194,33 @@ body.modal-open {
     height: 1.75rem;
     font-size: 0.813rem;
   }
+}
+
+.overdue-row {
+  background: rgba(239, 68, 68, 0.1) !important; /* Subtle red background */
+}
+
+.overdue-row td {
+  background: transparent !important; /* Ensure background shows through */
+}
+
+.overdue-row td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.overdue-row td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.overdue-date {
+  color: #ef4444; /* Red text for overdue date */
+  font-weight: 500;
+}
+
+/* Ensure mobile cards also show overdue state */
+.task-card.overdue {
+  background: rgba(239, 68, 68, 0.1);
 }
 </style>

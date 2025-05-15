@@ -34,15 +34,31 @@
     <div class="stats-bar">
       <div class="stat-item">
         <span class="stat-label">Total Tasks</span>
-        <span class="stat-value">12</span>
+        <span class="stat-value">
+          <span v-if="!isLoading">{{ totalTasks }}</span>
+          <div v-else class="spinner"></div>
+        </span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Pending</span>
+        <span class="stat-value">
+          <span v-if="!isLoading">{{ pendingTasks }}</span>
+          <div v-else class="spinner"></div>
+        </span>
       </div>
       <div class="stat-item">
         <span class="stat-label">In Progress</span>
-        <span class="stat-value">5</span>
+        <span class="stat-value">
+          <span v-if="!isLoading">{{ inProgressTasks }}</span>
+          <div v-else class="spinner"></div>
+        </span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Completed</span>
-        <span class="stat-value">7</span>
+        <span class="stat-value">
+          <span v-if="!isLoading">{{ completedTasks }}</span>
+          <div v-else class="spinner"></div>
+        </span>
       </div>
     </div>
 
@@ -50,6 +66,7 @@
       <div class="tasks-header">
         <div class="search-bar">
           <svg
+            v-if="!isSearching"
             xmlns="http://www.w3.org/2000/svg"
             width="20"
             height="20"
@@ -63,78 +80,89 @@
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="text" placeholder="Search tasks..." />
+          <div v-else class="spinner search-spinner"></div>
+          <input
+            type="text"
+            v-model="searchQuery"
+            placeholder="Search tasks..."
+            @input="handleSearch"
+          />
         </div>
         <div class="view-options">
-          <button class="view-btn active">All</button>
-          <button class="view-btn">Active</button>
-          <button class="view-btn">Completed</button>
+          <button class="new-task-btn" @click="showTaskForm = true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>New Task</span>
+          </button>
         </div>
       </div>
 
-      <!-- Replace empty state with tasks list -->
       <div class="tasks-list">
-        <div class="task-item">
-          <div class="task-content">
-            <div class="task-status" data-status="IN_PROGRESS"></div>
-            <div class="task-info">
-              <h3>Design User Interface</h3>
-              <p>Create modern UI design for the dashboard</p>
-              <div class="task-meta">
-                <span class="due-date">Due: Mar 25, 2024</span>
-              </div>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="action-btn edit">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </button>
-            <button class="action-btn delete">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M3 6h18"></path>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-            </button>
-          </div>
+        <div v-if="filteredTasks.length === 0" class="no-results">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <line x1="11" y1="8" x2="11" y2="14"></line>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+          </svg>
+          <p>No tasks found</p>
+          <span>Try adjusting your search</span>
         </div>
 
-        <div class="task-item">
+        <div
+          v-else
+          v-for="task in paginatedTasks"
+          :key="task.id"
+          class="task-item"
+          :class="{ overdue: isOverdue(task.due_date) }"
+        >
           <div class="task-content">
-            <div class="task-status" data-status="TODO"></div>
+            <div class="task-status" :data-status="task.status"></div>
             <div class="task-info">
-              <h3>Implement Authentication</h3>
-              <p>Set up user authentication system with JWT</p>
+              <h3>{{ task.title }}</h3>
+              <p class="description" :class="{ 'no-description': !task.description }">
+                {{
+                  task.description && task.description.length > 250 && !task.showFullDescription
+                    ? truncateText(task.description, 250)
+                    : task.description || 'No description'
+                }}
+                <button
+                  v-if="task.description && task.description.length > 250"
+                  class="show-more-btn"
+                  @click="toggleDescription(task)"
+                >
+                  {{ task.showFullDescription ? 'Show Less' : 'Show More' }}
+                </button>
+              </p>
               <div class="task-meta">
-                <span class="due-date">Due: Mar 28, 2024</span>
+                <span class="due-date">Due: {{ formatDate(task.due_date) }}</span>
               </div>
             </div>
           </div>
           <div class="task-actions">
-            <button class="action-btn edit">
+            <button class="action-btn edit" @click="handleEdit(task)">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -150,7 +178,7 @@
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
             </button>
-            <button class="action-btn delete">
+            <button class="action-btn delete" @click="handleDelete(task)">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -169,24 +197,257 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="filteredTasks.length > itemsPerPage" class="pagination">
+        <button
+          class="page-btn"
+          :disabled="currentPage === 1"
+          @click="handlePageChange(currentPage - 1)"
+          title="Previous page"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+
+        <div class="page-numbers">
+          <button
+            v-for="page in totalPages"
+            :key="page"
+            class="page-number"
+            :class="{ active: page === currentPage }"
+            @click="handlePageChange(page)"
+          >
+            {{ page }}
+          </button>
+        </div>
+
+        <button
+          class="page-btn"
+          :disabled="currentPage === totalPages"
+          @click="handlePageChange(currentPage + 1)"
+          title="Next page"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              d="M9 18l6-6-6-6"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
       </div>
     </div>
 
-    <TaskForm v-if="showTaskForm" @close="showTaskForm = false" />
+    <TaskForm
+      v-if="showTaskForm"
+      :taskToEdit="taskToEdit"
+      :mode="formMode"
+      @close="closeForm"
+      @success="handleFormSuccess"
+    />
+
+    <!-- Add toast -->
+    <div v-if="toast" class="toast" :class="toast.type">
+      {{ toast.message }}
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
+      <div class="confirm-dialog">
+        <h3>Delete Task</h3>
+        <p>Are you sure you want to delete "{{ itemToDelete?.title }}"?</p>
+        <p class="warning">This action cannot be undone.</p>
+        <div class="dialog-actions">
+          <button class="cancel-btn" @click="closeDeleteModal">Cancel</button>
+          <button class="confirm-btn" @click="confirmDelete">Delete</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import TaskForm from '@/components/TaskForm.vue'
 import { useRouter } from 'vue-router'
+import { taskService, type Task } from '../services/tasks'
+import { useToast } from '@/composables/useToast'
+import { useDeleteModal } from '@/composables/useDeleteModal'
 
 const showTaskForm = ref(false)
 const router = useRouter()
+const tasks = ref<Task[]>([])
+const isLoading = ref(false)
+const taskToEdit = ref<Task | null>(null)
+const formMode = ref<'create' | 'edit'>('create')
+
+const { showToast, toast } = useToast()
+const { showDeleteModal, itemToDelete, openDeleteModal, closeDeleteModal } = useDeleteModal()
+
+// Stats computations
+const totalTasks = computed(() => tasks.value.length)
+const inProgressTasks = computed(
+  () => tasks.value.filter((task) => task.status === 'in_progress').length,
+)
+const completedTasks = computed(
+  () => tasks.value.filter((task) => task.status === 'completed').length,
+)
+
+// Add pending tasks computation
+const pendingTasks = computed(() => tasks.value.filter((task) => task.status === 'pending').length)
+
+// Pagination
+const currentPage = ref(1)
+const itemsPerPage = 5
+const totalPages = computed(() => Math.ceil(tasks.value.length / itemsPerPage))
+
+// Add search ref
+const searchQuery = ref('')
+
+// Update paginatedTasks computed to include search
+const filteredTasks = computed(() => {
+  if (!searchQuery.value) return tasks.value
+
+  const query = searchQuery.value.toLowerCase()
+  return tasks.value.filter(
+    (task) =>
+      task.title.toLowerCase().includes(query) ||
+      (task.description && task.description.toLowerCase().includes(query)),
+  )
+})
+
+const paginatedTasks = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredTasks.value.slice(start, end)
+})
+
+// Reset page when search changes
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
+const loadTasks = async () => {
+  isLoading.value = true
+  try {
+    tasks.value = await taskService.getTasks()
+  } catch (error) {
+    console.error('Failed to load tasks:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadTasks()
+})
 
 const navigateToTasks = () => {
   router.push('/tasks')
 }
+
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+const handleEdit = (task: Task) => {
+  taskToEdit.value = task
+  formMode.value = 'edit'
+  showTaskForm.value = true
+}
+
+const handleDelete = (task: Task) => {
+  openDeleteModal({ id: task.id, title: task.title })
+}
+
+const confirmDelete = async () => {
+  if (!itemToDelete.value) return
+
+  try {
+    await taskService.deleteTask(Number(itemToDelete.value.id))
+    await loadTasks()
+
+    // Update current page if we're on an empty page
+    const maxPage = Math.ceil(tasks.value.length / itemsPerPage)
+    if (currentPage.value > maxPage && maxPage > 0) {
+      currentPage.value = maxPage
+    }
+
+    showToast('Task deleted successfully', 'success')
+  } catch (error) {
+    console.error('Failed to delete task:', error)
+    showToast('Failed to delete task', 'error')
+  } finally {
+    closeDeleteModal()
+  }
+}
+
+const handleFormSuccess = () => {
+  loadTasks()
+  // Show message before closing form
+  const message =
+    formMode.value === 'edit' ? 'Task updated successfully' : 'Task created successfully'
+  showToast(message, 'success')
+  closeForm()
+}
+
+const closeForm = () => {
+  showTaskForm.value = false
+  taskToEdit.value = null
+  formMode.value = 'create' // Reset mode after showing message
+}
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+}
+
+// Add toggle function
+interface ExtendedTask extends Task {
+  showFullDescription?: boolean
+}
+
+const toggleDescription = (task: ExtendedTask) => {
+  task.showFullDescription = !task.showFullDescription
+}
+
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text
+  return text.slice(0, maxLength) + '...'
+}
+
+// Add isOverdue function
+const isOverdue = (dueDate: string): boolean => {
+  return new Date(dueDate) < new Date()
+}
+
+const isSearching = ref(false)
+let searchTimeout: NodeJS.Timeout
+
+const handleSearch = () => {
+  isSearching.value = true
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    isSearching.value = false
+  }, 500)
+}
+
+// Clear timeout on component unmount
+onUnmounted(() => {
+  clearTimeout(searchTimeout)
+})
 </script>
 
 <style scoped>
@@ -231,6 +492,7 @@ h1 {
   font-weight: 700;
   background: linear-gradient(to right, #60a5fa, #818cf8);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -246,6 +508,7 @@ h1 {
   margin: 0;
   background: linear-gradient(to right, #94a3b8, #64748b);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -322,7 +585,7 @@ svg {
 
 .stats-bar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
   width: 100%;
@@ -357,15 +620,19 @@ svg {
 
 /* Different gradient for each stat item */
 .stat-item:nth-child(1)::before {
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  background: linear-gradient(135deg, #3b82f6, #60a5fa); /* Blue for Total */
 }
 
 .stat-item:nth-child(2)::before {
-  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+  background: linear-gradient(135deg, #ef4444, #f87171); /* Red gradient for Pending */
 }
 
 .stat-item:nth-child(3)::before {
-  background: linear-gradient(135deg, #10b981, #34d399);
+  background: linear-gradient(135deg, #f59e0b, #fbbf24); /* Yellow/Amber for In Progress */
+}
+
+.stat-item:nth-child(4)::before {
+  background: linear-gradient(135deg, #10b981, #34d399); /* Green for Completed */
 }
 
 .stat-item:hover::before {
@@ -381,13 +648,16 @@ svg {
 }
 
 .stat-value {
-  color: #f8fafc;
-  font-size: 2rem;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   font-weight: 700;
-  position: relative;
-  z-index: 1;
+  font-size: 2rem;
+  color: #f8fafc;
   background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.8));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -397,10 +667,14 @@ svg {
 }
 
 .stat-item:nth-child(2) {
-  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.1);
 }
 
 .stat-item:nth-child(3) {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.1);
+}
+
+.stat-item:nth-child(4) {
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.1);
 }
 
@@ -422,7 +696,7 @@ svg {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   gap: 1rem;
 }
 
@@ -459,39 +733,36 @@ svg {
   gap: 0.5rem;
 }
 
-.view-btn {
+.new-task-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   border: none;
-  background: rgba(255, 255, 255, 0.05);
-  color: #94a3b8;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.view-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.view-btn.active {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  border: none;
+  background: #fb923c;
   color: white;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.new-task-btn svg {
+  color: white;
+  stroke: white;
 }
 
 .tasks-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .task-item {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 1.25rem;
+  border-radius: 12px;
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -517,36 +788,37 @@ svg {
   flex-shrink: 0;
 }
 
-.task-status[data-status='TODO'] {
-  background: #f97316;
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
+.task-status[data-status='pending'] {
+  background: #ef4444; /* Red */
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
 }
 
-.task-status[data-status='IN_PROGRESS'] {
-  background: #3b82f6;
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+.task-status[data-status='in_progress'] {
+  background: #f59e0b; /* Yellow */
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
 }
 
-.task-status[data-status='COMPLETED'] {
-  background: #10b981;
+.task-status[data-status='completed'] {
+  background: #10b981; /* Green */
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
 }
 
 .task-info h3 {
   color: #f8fafc;
-  font-size: 1.1rem;
-  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  margin: 0 0 0.2rem;
 }
 
 .task-info p {
   color: #94a3b8;
-  font-size: 0.95rem;
-  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
 }
 
 .task-meta {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
 }
 
 .due-date {
@@ -560,26 +832,31 @@ svg {
 }
 
 .action-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 0.5rem;
-  color: #94a3b8;
   cursor: pointer;
   transition: all 0.2s;
+  border: none;
 }
 
-.action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
+.action-btn.edit {
+  color: #3b82f6; /* Blue color */
+  background: rgba(59, 130, 246, 0.1); /* Transparent blue */
 }
 
 .action-btn.edit:hover {
-  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.2); /* More visible on hover */
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+}
+
+.action-btn.delete {
+  color: #ef4444; /* Red color */
+  background: rgba(239, 68, 68, 0.1); /* Transparent red */
 }
 
 .action-btn.delete:hover {
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.2); /* More visible on hover */
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
 }
 
 @media (max-width: 768px) {
@@ -656,6 +933,271 @@ svg {
   .link-content {
     justify-content: center;
     font-size: 1rem;
+  }
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0;
+  margin-left: 0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding: 1rem;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.page-btn,
+.page-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-btn:not(:disabled):hover,
+.page-number:not(.active):hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+.page-number.active {
+  background: #f89c1c;
+  color: white;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .pagination {
+    gap: 0.25rem;
+  }
+
+  .page-btn,
+  .page-number {
+    min-width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.813rem;
+  }
+}
+
+.description.no-description {
+  color: #64748b; /* Lighter color for placeholder */
+  font-style: italic;
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+}
+
+.toast.success {
+  background: #10b981;
+}
+
+.toast.error {
+  background: #ef4444;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.confirm-dialog {
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.confirm-dialog:hover {
+  transform: scale(1.02);
+}
+
+.confirm-dialog h3 {
+  color: #f8fafc;
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.confirm-dialog p {
+  color: #94a3b8;
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.warning {
+  color: #64748b !important;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem !important;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.confirm-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirm-btn:hover {
+  background: #dc2626;
+}
+
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.no-results svg {
+  margin-bottom: 1rem;
+  color: #475569;
+}
+
+.no-results p {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+  color: #94a3b8;
+}
+
+.no-results span {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.description {
+  position: relative;
+  color: #94a3b8;
+  margin: 0.5rem 0;
+  line-height: 1.5;
+}
+
+.show-more-btn {
+  background: none;
+  border: none;
+  color: #f59e0b;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.show-more-btn:hover {
+  color: #f97316;
+}
+
+.task-item.overdue {
+  border: 1px solid rgba(239, 68, 68, 0.2); /* Red border */
+  background: rgba(239, 68, 68, 0.05); /* Light red background */
+}
+
+.task-item.overdue .due-date {
+  color: #ef4444; /* Red text for due date */
+  font-weight: 500;
+}
+
+.search-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

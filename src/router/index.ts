@@ -20,6 +20,8 @@ const requireAuth = (
 
   if (!isAuthenticated && to.name !== 'login') {
     next({ name: 'login' })
+  } else if (isAuthenticated && to.name === 'login') {
+    next({ name: 'home' }) // Redirect to home if trying to access login while authenticated
   } else {
     next()
   }
@@ -46,6 +48,7 @@ const routes: RouteRecordRaw[] = [
         path: 'login',
         name: 'login',
         component: LoginView,
+        beforeEnter: requireAuth,
       },
       {
         path: '',

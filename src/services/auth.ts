@@ -3,7 +3,7 @@ import api from './api'
 export const authService = {
   async checkConnection() {
     try {
-      const response = await api.get('/health')
+      const response = await api.get('/api/health')
       return response.data
     } catch (error) {
       throw error
@@ -12,7 +12,7 @@ export const authService = {
 
   async login(email: string, password: string) {
     try {
-      const response = await api.post('/login', { email, password })
+      const response = await api.post('/api/login', { email, password })
       return response.data
     } catch (error) {
       throw error

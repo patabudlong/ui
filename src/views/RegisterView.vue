@@ -221,6 +221,14 @@ const closeErrorModal = () => {
   </div>
 </template>
 
+<style>
+/* Remove any global styles that might affect links */
+a:hover {
+  color: inherit;
+  text-decoration: none;
+}
+</style>
+
 <style scoped>
 .register-view {
   min-height: 100vh;
@@ -351,10 +359,6 @@ input::placeholder {
   text-decoration: none;
   margin-left: 0.5rem;
   cursor: pointer;
-}
-
-.login-link:hover {
-  color: #60a5fa;
 }
 
 @media (max-width: 768px) {

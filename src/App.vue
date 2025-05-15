@@ -1,9 +1,20 @@
-<script setup lang="ts">
-import { RouterView } from 'vue-router'
+<script lang="ts">
+import { defineComponent } from 'vue'
+import Navbar from './components/Navbar.vue'
+
+export default defineComponent({
+  name: 'App',
+  components: {
+    Navbar,
+  },
+})
 </script>
 
 <template>
-  <RouterView />
+  <div class="app">
+    <Navbar />
+    <router-view></router-view>
+  </div>
 </template>
 
 <style>
@@ -19,6 +30,10 @@ body {
 }
 
 #app {
+  min-height: 100vh;
+}
+
+.app {
   min-height: 100vh;
 }
 </style>

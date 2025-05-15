@@ -34,15 +34,15 @@
     <div class="stats-bar">
       <div class="stat-item">
         <span class="stat-label">Total Tasks</span>
-        <span class="stat-value">12</span>
+        <span class="stat-value">{{ totalTasks }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">In Progress</span>
-        <span class="stat-value">5</span>
+        <span class="stat-value">{{ inProgressTasks }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Completed</span>
-        <span class="stat-value">7</span>
+        <span class="stat-value">{{ completedTasks }}</span>
       </div>
     </div>
 
@@ -177,12 +177,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import TaskForm from '@/components/TaskForm.vue'
 import { useRouter } from 'vue-router'
+import { taskService, type Task } from '../services/tasks'
 
 const showTaskForm = ref(false)
 const router = useRouter()
+const tasks = ref<Task[]>([])
+
+// Stats computations
+const totalTasks = computed(() => tasks.value.length)
+const inProgressTasks = computed(
+  () => tasks.value.filter((task) => task.status === 'in_progress').length,
+)
+const completedTasks = computed(
+  () => tasks.value.filter((task) => task.status === 'completed').length,
+)
+
+const loadTasks = async () => {
+  try {
+    tasks.value = await taskService.getTasks()
+  } catch (error) {
+    console.error('Failed to load tasks:', error)
+  }
+}
+
+onMounted(() => {
+  loadTasks()
+})
 
 const navigateToTasks = () => {
   router.push('/tasks')

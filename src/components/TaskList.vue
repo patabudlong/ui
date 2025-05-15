@@ -283,7 +283,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { taskService, type Task } from '../services/tasks'
 import TaskForm from './TaskForm.vue'
 
@@ -387,6 +387,16 @@ const handleDelete = (task: Task) => {
   taskToDelete.value = task
   showDeleteModal.value = true
 }
+
+// Add/remove body class when modal opens/closes
+watch([showModal, showEditModal], ([newShowModal, newShowEditModal]) => {
+  if (newShowModal || newShowEditModal) {
+    document.body.classList.add('modal-open')
+  } else {
+    document.body.classList.remove('modal-open')
+    document.body.style.overflow = '' // Reset overflow
+  }
+})
 </script>
 
 <style scoped>
@@ -862,15 +872,34 @@ tr td:last-child {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.8);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Changed from center */
   z-index: 1000;
+  backdrop-filter: blur(3px);
+  padding: 2rem;
+  overflow-y: auto; /* Enable scrolling */
+}
+
+/* Ensure table is scrollable on smaller screens */
+.task-table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.task-table {
+  width: 100%;
+  min-width: 800px; /* Ensure minimum width */
+}
+
+/* When modal is open, prevent main content scroll but keep it visible */
+body.modal-open {
+  overflow: hidden;
+  padding-right: 15px; /* Prevent layout shift */
 }
 
 .modal {

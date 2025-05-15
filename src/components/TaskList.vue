@@ -21,11 +21,14 @@
           </div>
         </div>
       </div>
-      <button class="new-task-btn" @click="$emit('showModal')">
+      <button class="new-task-btn" @click="showModal = true">
         <span class="plus-icon">+</span>
         New Task
       </button>
     </div>
+
+    <!-- Task Form Modal -->
+    <TaskForm v-if="showModal" @close="showModal = false" @success="loadTasks()" />
 
     <!-- Table Structure Always Present -->
     <table class="task-table desktop-table">
@@ -75,7 +78,7 @@
                 <line x1="9" y1="15" x2="15" y2="15"></line>
               </svg>
               <p>No tasks found</p>
-              <button class="new-task-btn" @click="$emit('showModal')">
+              <button class="new-task-btn" @click="showModal = true">
                 <span class="plus-icon">+</span>
                 Create New Task
               </button>
@@ -171,7 +174,7 @@
             <line x1="9" y1="15" x2="15" y2="15"></line>
           </svg>
           <p>No tasks found</p>
-          <button class="new-task-btn" @click="$emit('showModal')">
+          <button class="new-task-btn" @click="showModal = true">
             <span class="plus-icon">+</span>
             Create New Task
           </button>
@@ -237,19 +240,27 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { taskService, type Task } from '../services/tasks'
+import TaskForm from './TaskForm.vue'
 
 const tasks = ref<Task[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const showModal = ref(false)
 
-onMounted(async () => {
+const loadTasks = async () => {
+  loading.value = true
+  error.value = null
   try {
     tasks.value = await taskService.getTasks()
-  } catch (_error) {
+  } catch (error) {
     error.value = 'Failed to load tasks'
   } finally {
     loading.value = false
   }
+}
+
+onMounted(() => {
+  loadTasks()
 })
 
 const formatDate = (date: string) => {
@@ -299,16 +310,6 @@ const handleDelete = async (task: Task) => {
     tasks.value = tasks.value.filter((t) => t.id !== task.id)
   } catch (_error) {
     alert('Failed to delete task')
-  }
-}
-
-const loadTasks = async () => {
-  try {
-    tasks.value = await taskService.getTasks()
-  } catch (_error) {
-    error.value = 'Failed to load tasks'
-  } finally {
-    loading.value = false
   }
 }
 </script>

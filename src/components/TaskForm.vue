@@ -62,7 +62,7 @@
           <input
             type="date"
             id="dueDate"
-            v-model="task.dueDate"
+            v-model="task.due_date"
             required
             :class="{ error: errors.dueDate }"
             :disabled="isSubmitting"
@@ -82,9 +82,9 @@
             :class="{ error: errors.status }"
             :disabled="isSubmitting"
           >
-            <option value="TODO">To Do</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="COMPLETED">Completed</option>
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
           </select>
           <span v-if="errors.status" class="error-message">{{ errors.status }}</span>
         </div>
@@ -115,22 +115,22 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
+import { taskService } from '../services/tasks'
 
-interface Task {
+interface TaskForm {
   title: string
   description: string
-  dueDate: string
-  status: string
+  due_date: string
+  status: 'pending' | 'in_progress' | 'completed'
 }
 
-const initialTask = {
+const task = reactive<TaskForm>({
   title: '',
   description: '',
-  dueDate: '',
-  status: 'TODO',
-}
+  due_date: '',
+  status: 'pending',
+})
 
-const task = reactive<Task>({ ...initialTask })
 const showTooltip = ref(false)
 const showConfirmDialog = ref(false)
 const isSubmitting = ref(false)
@@ -144,7 +144,7 @@ const hasChanges = computed(() => {
   return (
     task.title !== initialTask.title ||
     task.description !== initialTask.description ||
-    task.dueDate !== initialTask.dueDate ||
+    task.due_date !== initialTask.due_date ||
     task.status !== initialTask.status
   )
 })
@@ -157,7 +157,6 @@ const validateForm = (): boolean => {
   errors.dueDate = ''
   errors.status = ''
 
-  // Title validation
   if (!task.title.trim()) {
     errors.title = 'Title is required'
     isValid = false
@@ -166,12 +165,11 @@ const validateForm = (): boolean => {
     isValid = false
   }
 
-  // Due date validation
-  if (!task.dueDate) {
+  if (!task.due_date) {
     errors.dueDate = 'Due date is required'
     isValid = false
   } else {
-    const selectedDate = new Date(task.dueDate)
+    const selectedDate = new Date(task.due_date)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -181,7 +179,6 @@ const validateForm = (): boolean => {
     }
   }
 
-  // Status validation
   if (!task.status) {
     errors.status = 'Status is required'
     isValid = false
@@ -195,14 +192,25 @@ const handleSubmit = async () => {
     isSubmitting.value = true
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await taskService.createTask({
+        title: task.title,
+        description: task.description,
+        due_date: task.due_date,
+        status: task.status,
+      })
 
-      // Close modal after successful submission
+      // Reset form
+      task.title = ''
+      task.description = ''
+      task.due_date = ''
+      task.status = 'pending'
+
+      // Emit success event for parent to refresh task list
+      emit('success')
       emit('close')
-
-      console.log('Task submitted:', task)
-      // Add your submission logic here
+    } catch (error) {
+      console.error('Failed to create task:', error)
+      alert('Failed to create task. Please try again.')
     } finally {
       isSubmitting.value = false
     }
@@ -226,7 +234,7 @@ const cancelClose = () => {
   showConfirmDialog.value = false
 }
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'success'])
 </script>
 
 <style scoped>

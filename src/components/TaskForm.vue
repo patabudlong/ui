@@ -35,7 +35,7 @@
         <div class="form-group">
           <label for="title">
             Title
-            <span class="required-indicator">*</span>
+            <span class="required-indicator" style="display: none">*</span>
           </label>
           <input
             type="text"
@@ -43,10 +43,12 @@
             v-model="task.title"
             required
             placeholder="Enter task title"
-            :class="{ error: errors.title }"
+            :class="{ error: hasAttemptedSubmit && errors.title }"
             :disabled="isSubmitting"
           />
-          <span v-if="errors.title" class="error-message">{{ errors.title }}</span>
+          <span v-if="hasAttemptedSubmit && errors.title" class="error-message">
+            {{ errors.title }}
+          </span>
         </div>
 
         <div class="form-group">
@@ -63,36 +65,38 @@
         <div class="form-group">
           <label for="dueDate">
             Due Date
-            <span class="required-indicator">*</span>
+            <span class="required-indicator" style="display: none">*</span>
           </label>
           <input
             type="date"
             id="dueDate"
             v-model="task.due_date"
-            required
-            :class="{ error: errors.dueDate }"
+            :class="{ error: hasAttemptedSubmit && errors.dueDate }"
             :disabled="isSubmitting"
           />
-          <span v-if="errors.dueDate" class="error-message">{{ errors.dueDate }}</span>
+          <span v-if="hasAttemptedSubmit && errors.dueDate" class="error-message">
+            {{ errors.dueDate }}
+          </span>
         </div>
 
         <div class="form-group">
           <label for="status">
             Status
-            <span class="required-indicator">*</span>
+            <span class="required-indicator" style="display: none">*</span>
           </label>
           <select
             id="status"
             v-model="task.status"
-            required
-            :class="{ error: errors.status }"
+            :class="{ error: hasAttemptedSubmit && errors.status }"
             :disabled="isSubmitting"
           >
             <option value="pending">Pending</option>
             <option value="in_progress">In Progress</option>
             <option value="completed">Completed</option>
           </select>
-          <span v-if="errors.status" class="error-message">{{ errors.status }}</span>
+          <span v-if="hasAttemptedSubmit && errors.status" class="error-message">
+            {{ errors.status }}
+          </span>
         </div>
 
         <button type="submit" class="submit-btn" :disabled="isSubmitting">
@@ -120,18 +124,19 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, onMounted, watch } from 'vue'
 import { taskService, type Task } from '../services/tasks'
 
-interface Props {
-  mode?: 'create' | 'edit'
-  taskToEdit?: Task
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  mode: 'create',
-  taskToEdit: undefined,
-})
+const props = withDefaults(
+  defineProps<{
+    mode?: 'create' | 'edit'
+    taskToEdit?: Task | null
+  }>(),
+  {
+    mode: 'create',
+    taskToEdit: null,
+  },
+)
 
 interface TaskForm {
   title: string
@@ -140,18 +145,30 @@ interface TaskForm {
   status: 'pending' | 'in_progress' | 'completed'
 }
 
-const initialTask = {
+const task = reactive<TaskForm>({
   title: props.taskToEdit?.title || '',
   description: props.taskToEdit?.description || '',
   due_date: props.taskToEdit?.due_date || '',
   status: props.taskToEdit?.status || 'pending',
-}
+})
 
-const task = reactive<TaskForm>({ ...initialTask })
+watch(
+  () => props.taskToEdit,
+  (newTask) => {
+    if (newTask) {
+      task.title = newTask.title
+      task.description = newTask.description
+      task.due_date = newTask.due_date
+      task.status = newTask.status
+    }
+  },
+  { immediate: true },
+)
 
 const showTooltip = ref(false)
 const showConfirmDialog = ref(false)
 const isSubmitting = ref(false)
+const hasAttemptedSubmit = ref(false)
 const errors = reactive({
   title: '',
   dueDate: '',
@@ -160,14 +177,15 @@ const errors = reactive({
 
 const hasChanges = computed(() => {
   return (
-    task.title !== initialTask.title ||
-    task.description !== initialTask.description ||
-    task.due_date !== initialTask.due_date ||
-    task.status !== initialTask.status
+    task.title !== props.taskToEdit?.title ||
+    task.description !== props.taskToEdit?.description ||
+    task.due_date !== props.taskToEdit?.due_date ||
+    task.status !== props.taskToEdit?.status
   )
 })
 
 const validateForm = (): boolean => {
+  hasAttemptedSubmit.value = true
   let isValid = true
 
   // Reset errors
@@ -245,19 +263,28 @@ const handleSubmit = async () => {
 }
 
 const resetValidation = () => {
+  hasAttemptedSubmit.value = false // Reset attempt flag
   errors.title = ''
   errors.dueDate = ''
   errors.status = ''
 }
 
 const resetForm = () => {
-  // Reset form data
-  task.title = ''
-  task.description = ''
-  task.due_date = ''
-  task.status = 'pending'
+  if (props.mode === 'edit' && props.taskToEdit) {
+    // In edit mode, reset to original values
+    task.title = props.taskToEdit.title
+    task.description = props.taskToEdit.description
+    task.due_date = props.taskToEdit.due_date
+    task.status = props.taskToEdit.status
+  } else {
+    // In create mode, reset to empty
+    task.title = ''
+    task.description = ''
+    task.due_date = ''
+    task.status = 'pending'
+  }
 
-  // Reset validation
+  hasAttemptedSubmit.value = false
   resetValidation()
 }
 
@@ -273,7 +300,7 @@ const handleClose = () => {
     showConfirmDialog.value = true
     document.body.style.overflow = 'hidden'
   } else {
-    resetForm()
+    resetValidation() // Reset validation on close
     emit('close')
   }
 }
@@ -283,6 +310,11 @@ const cancelClose = () => {
   document.body.style.overflow = ''
   resetValidation()
 }
+
+// Reset everything when form opens
+onMounted(() => {
+  resetForm()
+})
 </script>
 
 <style scoped>
@@ -396,18 +428,15 @@ select {
   font-size: 0.813rem;
   background: rgba(255, 255, 255, 0.05);
   color: #e2e8f0;
-  transition: all 0.2s;
-  box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.1),
-    inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 input::placeholder,
@@ -526,9 +555,7 @@ select::-ms-expand {
 
 .description-container {
   display: flex;
-  align-items: center;
   gap: 0.5rem;
-  margin: 0 0 15px 0;
 }
 
 .header-description {
@@ -642,10 +669,6 @@ select::-ms-expand {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-  }
-
-  .form-group {
-    margin-bottom: 1.25rem;
   }
 
   label {
@@ -770,7 +793,7 @@ select::-ms-expand {
 }
 
 .error-message {
-  color: #811717;
+  color: #ef4444;
   font-size: 0.75rem;
   margin-top: 0.375rem;
   display: block;
@@ -784,11 +807,6 @@ select:invalid {
   box-shadow:
     0 2px 4px rgba(239, 68, 68, 0.1),
     inset 0 2px 4px rgba(239, 68, 68, 0.05);
-}
-
-/* Adjust spacing when error is present */
-.form-group:has(.error-message) {
-  margin-bottom: 2rem;
 }
 
 /* Remove browser default invalid styles */
@@ -914,4 +932,20 @@ input:disabled::placeholder,
 textarea:disabled::placeholder {
   color: #94a3b8;
 }
+
+/* Remove error styles */
+input.error,
+select.error {
+  border-color: rgba(255, 255, 255, 0.1); /* Use default border */
+  box-shadow: none;
+}
+
+/* Remove required attribute styling */
+input:required,
+select:required {
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Optional: remove the required attribute altogether from inputs */
 </style>

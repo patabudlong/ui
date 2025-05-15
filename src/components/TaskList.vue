@@ -30,6 +30,7 @@
     <!-- Task Form Modal -->
     <TaskForm
       v-if="showModal"
+      mode="create"
       @close="showModal = false"
       @success="loadTasks()"
       @showToast="showToastMessage"
@@ -352,7 +353,7 @@ const getStatusColor = (status: string): string => {
 }
 
 const handleEdit = (task: Task) => {
-  taskToEdit.value = task
+  taskToEdit.value = { ...task } // Clone the task
   showEditModal.value = true
 }
 

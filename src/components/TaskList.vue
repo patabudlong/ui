@@ -27,62 +27,210 @@
       </button>
     </div>
 
-    <div v-if="loading" class="loading-state">Loading tasks...</div>
-    <div v-else-if="error" class="error-state">
-      {{ error }}
-    </div>
-    <template v-else>
-      <!-- Desktop Table -->
-      <table class="task-table desktop-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Created</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+    <!-- Table Structure Always Present -->
+    <table class="task-table desktop-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Created</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-if="loading" class="loading-row">
+          <td colspan="5">
+            <div class="loading-state">
+              <div class="loading-spinner"></div>
+              Loading tasks...
+            </div>
+          </td>
+        </tr>
+        <tr v-else-if="error" class="error-row">
+          <td colspan="5">
+            <div class="error-state">
+              {{ error }}
+              <button @click="loadTasks" class="retry-btn">Retry</button>
+            </div>
+          </td>
+        </tr>
+        <tr v-else-if="tasks.length === 0" class="empty-row">
+          <td colspan="5">
+            <div class="empty-state">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+              <p>No tasks found</p>
+              <button class="new-task-btn" @click="$emit('showModal')">
+                <span class="plus-icon">+</span>
+                Create New Task
+              </button>
+            </div>
+          </td>
+        </tr>
+        <template v-else>
           <tr v-for="task in tasks" :key="task.id">
             <td>{{ task.title }}</td>
             <td>{{ task.description }}</td>
             <td>{{ formatDate(task.created_at) }}</td>
             <td>
               <span class="status-badge" :class="task.status">
-                {{ task.status }}
+                <span
+                  class="status-circle"
+                  :style="{ backgroundColor: getStatusColor(task.status) }"
+                ></span>
+                {{ formatStatus(task.status) }}
               </span>
             </td>
             <td>
               <div class="task-actions">
-                <button class="action-btn edit" @click="handleEdit(task)">Edit</button>
-                <button class="action-btn delete" @click="handleDelete(task)">Delete</button>
+                <button class="action-btn edit" @click="handleEdit(task)" title="Edit">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button class="action-btn delete" @click="handleDelete(task)" title="Delete">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
               </div>
             </td>
           </tr>
-        </tbody>
-      </table>
+        </template>
+      </tbody>
+    </table>
 
-      <!-- Mobile Cards -->
-      <div class="mobile-cards">
+    <!-- Mobile Cards with Similar Structure -->
+    <div class="mobile-cards">
+      <div v-if="loading" class="loading-card">
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          Loading tasks...
+        </div>
+      </div>
+      <div v-else-if="error" class="error-card">
+        <div class="error-state">
+          {{ error }}
+          <button @click="loadTasks" class="retry-btn">Retry</button>
+        </div>
+      </div>
+      <div v-else-if="tasks.length === 0" class="empty-card">
+        <div class="empty-state">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+          <p>No tasks found</p>
+          <button class="new-task-btn" @click="$emit('showModal')">
+            <span class="plus-icon">+</span>
+            Create New Task
+          </button>
+        </div>
+      </div>
+      <template v-else>
         <div v-for="task in tasks" :key="task.id" class="task-card">
           <div class="card-header">
             <h3>{{ task.title }}</h3>
             <span class="status-badge" :class="task.status">
-              {{ task.status }}
+              <span
+                class="status-circle"
+                :style="{ backgroundColor: getStatusColor(task.status) }"
+              ></span>
+              {{ formatStatus(task.status) }}
             </span>
           </div>
           <p class="card-description">{{ task.description }}</p>
           <div class="card-footer">
             <span class="due-date">Created: {{ formatDate(task.created_at) }}</span>
             <div class="task-actions">
-              <button class="action-btn edit" @click="handleEdit(task)">Edit</button>
-              <button class="action-btn delete" @click="handleDelete(task)">Delete</button>
+              <button class="action-btn edit" @click="handleEdit(task)" title="Edit">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+              <button class="action-btn delete" @click="handleDelete(task)" title="Delete">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
-      </div>
-    </template>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -110,6 +258,36 @@ const formatDate = (date: string) => {
 
 const showTooltip = ref(false)
 
+const formatStatus = (status: string): string => {
+  switch (status) {
+    case 'todo':
+      return 'To do'
+    case 'in_progress':
+      return 'In progress'
+    case 'completed':
+      return 'Completed'
+    case 'overdue':
+      return 'Overdue'
+    default:
+      return status
+  }
+}
+
+const getStatusColor = (status: string): string => {
+  switch (status) {
+    case 'todo':
+      return '#FF4B4B'
+    case 'in_progress':
+      return '#FFB800'
+    case 'completed':
+      return '#00B884'
+    case 'overdue':
+      return '#FF0000'
+    default:
+      return '#64748b'
+  }
+}
+
 const handleEdit = async (task: Task) => {
   // TODO: Implement edit functionality
   console.log('Edit task:', task)
@@ -121,6 +299,16 @@ const handleDelete = async (task: Task) => {
     tasks.value = tasks.value.filter((t) => t.id !== task.id)
   } catch (_error) {
     alert('Failed to delete task')
+  }
+}
+
+const loadTasks = async () => {
+  try {
+    tasks.value = await taskService.getTasks()
+  } catch (_error) {
+    error.value = 'Failed to load tasks'
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -184,6 +372,40 @@ const handleDelete = async (task: Task) => {
   border-spacing: 0 0.75rem;
 }
 
+.task-table th,
+.task-table td {
+  padding: 0.75rem 1.5rem;
+  text-align: left;
+}
+
+/* Make status column wider */
+.task-table th:nth-child(4),
+.task-table td:nth-child(4) {
+  min-width: 150px; /* Increased width for status column */
+  width: 150px;
+}
+
+/* Optional: adjust other column widths if needed */
+.task-table th:nth-child(1),
+.task-table td:nth-child(1) {
+  width: 20%; /* Title column */
+}
+
+.task-table th:nth-child(2),
+.task-table td:nth-child(2) {
+  width: 35%; /* Description column */
+}
+
+.task-table th:nth-child(3),
+.task-table td:nth-child(3) {
+  width: 15%; /* Created column */
+}
+
+.task-table th:nth-child(5),
+.task-table td:nth-child(5) {
+  width: 15%; /* Actions column */
+}
+
 th {
   text-align: left;
   padding: 0.75rem 1.5rem;
@@ -232,25 +454,26 @@ tr td:last-child {
 }
 
 .status-badge {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e2e8f0;
 }
 
-.status-badge.todo {
-  background: rgba(220, 38, 38, 0.2);
-  color: #ef4444;
+.status-circle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
-.status-badge.in_progress {
-  background: rgba(245, 158, 11, 0.2);
-  color: #f89c1c;
-}
-
-.status-badge.completed {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+.status-badge.todo,
+.status-badge.in_progress,
+.status-badge.completed,
+.status-badge.overdue {
+  background: transparent;
 }
 
 .task-actions {
@@ -259,11 +482,14 @@ tr td:last-child {
 }
 
 .action-btn {
-  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
   border-radius: 6px;
   border: none;
-  font-size: 0.875rem;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
 .action-btn.edit {
@@ -271,9 +497,17 @@ tr td:last-child {
   color: #3b82f6;
 }
 
+.action-btn.edit:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
 .action-btn.delete {
   background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
+}
+
+.action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.3);
 }
 
 @media (max-width: 768px) {
@@ -295,6 +529,11 @@ tr td:last-child {
 
   .header-content {
     width: 100%;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 0.75rem;
   }
 }
 
@@ -355,19 +594,6 @@ tr td:last-child {
 
   .mobile-cards {
     display: block;
-  }
-
-  .task-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-    width: 100%;
-  }
-
-  .action-btn {
-    flex: 1;
-    justify-content: center;
-    text-align: center;
   }
 
   .card-footer {
@@ -452,15 +678,106 @@ tr td:last-child {
   }
 }
 
+.loading-row td,
+.error-row td {
+  padding: 3rem !important;
+  text-align: center;
+  background: #1e293b !important;
+}
+
 .loading-state,
 .error-state {
-  text-align: center;
-  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
   color: #64748b;
+}
+
+.loading-card,
+.error-card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: #f89c1c;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.retry-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: #f89c1c;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.retry-btn:hover {
+  background: #ff9d2f;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+}
+
+.empty-state svg {
+  margin-bottom: 1rem;
+  color: #64748b;
+}
+
+.empty-state p {
+  margin: 0 0 1.5rem;
   font-size: 1rem;
 }
 
-.error-state {
-  color: #ef4444;
+.empty-card {
+  background: #1e293b;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.empty-row td {
+  background: #1e293b !important;
+}
+
+.new-task-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f89c1c;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.new-task-btn:hover {
+  background: #ff9d2f;
 }
 </style>

@@ -21,8 +21,8 @@ const showModal = ref(false)
 }
 
 .container {
-  width: 100%;
-  max-width: 100%;
+  width: 130%;
+  max-width: 130%;
   margin: 0;
 }
 </style>

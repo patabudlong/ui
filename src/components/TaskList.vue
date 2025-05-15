@@ -2,7 +2,33 @@
   <div class="table-container">
     <div class="table-header">
       <div class="header-content">
-        <h2>Tasks</h2>
+        <div class="header-top">
+          <h2>Tasks</h2>
+          <div class="search-bar">
+            <svg
+              v-if="!isSearching"
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <div v-else class="spinner search-spinner"></div>
+            <input
+              type="text"
+              v-model="searchQuery"
+              placeholder="Search tasks..."
+              @input="handleSearch"
+            />
+          </div>
+        </div>
         <div class="description-container">
           <p class="header-description">Manage your tasks and track their progress</p>
           <div class="tooltip-container">
@@ -14,7 +40,7 @@
               ?
             </button>
             <div class="tooltip" v-if="showTooltip">
-              Create, edit, and track your tasks efficiently. Each task can be marked as TODO, IN
+              Create, edit, and track your tasks efficiently. Each task can be marked as PENDING, IN
               PROGRESS, or COMPLETED. Use the status indicators to monitor progress and the action
               buttons to manage tasks.
             </div>
@@ -33,7 +59,7 @@
       mode="create"
       @close="showModal = false"
       @success="loadTasks()"
-      @showToast="showToastMessage"
+      @showToast="showToast"
     />
 
     <!-- Edit Task Modal -->
@@ -43,7 +69,7 @@
       :taskToEdit="taskToEdit"
       @close="showEditModal = false"
       @success="loadTasks()"
-      @showToast="showToastMessage"
+      @showToast="showToast"
     />
 
     <!-- Table Structure Always Present -->
@@ -74,7 +100,7 @@
             </div>
           </td>
         </tr>
-        <tr v-else-if="tasks.length === 0" class="empty-row">
+        <tr v-else-if="filteredTasks.length === 0" class="empty-row">
           <td colspan="5">
             <div class="empty-state">
               <svg
@@ -88,16 +114,13 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="12" y1="18" x2="12" y2="12"></line>
-                <line x1="9" y1="15" x2="15" y2="15"></line>
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="11" y1="8" x2="11" y2="14"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
               </svg>
               <p>No tasks found</p>
-              <button class="new-task-btn" @click="showModal = true">
-                <span class="plus-icon">+</span>
-                Create New Task
-              </button>
+              <p class="empty-subtitle">Try adjusting your search</p>
             </div>
           </td>
         </tr>
@@ -108,7 +131,14 @@
             :class="{ 'overdue-row': isOverdue(task.due_date) && task.status !== 'completed' }"
           >
             <td>{{ task.title }}</td>
-            <td>{{ task.description }}</td>
+            <td>
+              <span
+                :class="{ 'empty-description': !task.description }"
+                :title="task.description || 'No description'"
+              >
+                {{ truncateDescription(task.description) }}
+              </span>
+            </td>
             <td>
               <span
                 :class="{ 'overdue-date': isOverdue(task.due_date) && task.status !== 'completed' }"
@@ -168,7 +198,7 @@
     </table>
 
     <!-- Modern Pagination -->
-    <div v-if="tasks.length > itemsPerPage" class="pagination">
+    <div v-if="filteredTasks.length > ITEMS_PER_PAGE" class="pagination">
       <button
         class="page-btn"
         :disabled="currentPage === 1"
@@ -265,7 +295,13 @@
               {{ formatStatus(task.status) }}
             </span>
           </div>
-          <p class="card-description">{{ task.description }}</p>
+          <p
+            class="card-description"
+            :class="{ 'empty-description': !task.description }"
+            :title="task.description || 'No description'"
+          >
+            {{ truncateDescription(task.description) }}
+          </p>
           <div class="card-footer">
             <span class="due-date">Created: {{ formatDate(task.created_at) }}</span>
             <div class="task-actions">
@@ -309,86 +345,128 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div
-      v-if="showDeleteModal"
-      class="modal-overlay"
-      @click="!isDeletingTask && (showDeleteModal = false)"
-    >
+    <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
       <div class="modal" @click.stop>
         <div class="modal-content">
           <h2>Delete Task</h2>
-          <p>Are you sure you want to delete "{{ taskToDelete?.title }}"?</p>
+          <p>Are you sure you want to delete "{{ itemToDelete?.title }}"?</p>
           <p class="warning-text">This action cannot be undone.</p>
           <div class="modal-actions">
-            <button class="cancel-btn" @click="showDeleteModal = false" :disabled="isDeletingTask">
-              Cancel
-            </button>
-            <button class="delete-btn" @click="confirmDelete" :disabled="isDeletingTask">
-              <span v-if="isDeletingTask" class="spinner"></span>
-              <span v-else>Delete</span>
-            </button>
+            <button class="cancel-btn" @click="closeDeleteModal">Cancel</button>
+            <button class="delete-btn" @click="confirmDelete">Delete</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Toast Notification -->
-    <div v-if="showToast" class="toast" :class="toastType" @click="showToast = false">
-      {{ toastMessage }}
+    <div v-if="toast" class="toast" :class="toast.type">
+      {{ toast.message }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
-import { taskService, type Task } from '../services/tasks'
+// Imports
+import { ref, computed, watch, onMounted } from 'vue'
+import { taskService, type Task } from '@/services/tasks'
 import TaskForm from './TaskForm.vue'
+import { useDeleteModal } from '@/composables/useDeleteModal'
+import { useToast } from '@/composables/useToast'
 
+// Composables
+const { showDeleteModal, itemToDelete, closeDeleteModal, openDeleteModal } = useDeleteModal()
+const { toast, showToast } = useToast()
+
+// Constants
+const ITEMS_PER_PAGE = 5
+const STATUS_MAP = {
+  pending: 'Pending',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+} as const
+
+const STATUS_COLORS = {
+  pending: '#FF4B4B',
+  in_progress: '#FFB800',
+  completed: '#00B884',
+} as const
+
+// State
 const tasks = ref<Task[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showModal = ref(false)
-const showDeleteModal = ref(false)
-const taskToDelete = ref<Task | null>(null)
-const isDeletingTask = ref(false)
-const showToast = ref(false)
-const toastMessage = ref('')
-const toastType = ref<'success' | 'error'>('success')
 const showEditModal = ref(false)
 const taskToEdit = ref<Task | null>(null)
-
-// Pagination state
 const currentPage = ref(1)
-const itemsPerPage = 5
-const totalPages = computed(() => Math.ceil(tasks.value.length / itemsPerPage))
+const showTooltip = ref(false)
+const searchQuery = ref('')
+const isSearching = ref(false)
+let searchTimeout: NodeJS.Timeout
 
-// Get paginated tasks
+// Computed
+const totalPages = computed(() => Math.ceil(filteredTasks.value.length / ITEMS_PER_PAGE))
+const filteredTasks = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim()
+  if (!query) return tasks.value
+
+  return tasks.value.filter(
+    (task) =>
+      task.title.toLowerCase().includes(query) ||
+      (task.description?.toLowerCase() || '').includes(query),
+  )
+})
 const paginatedTasks = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return tasks.value.slice(start, end)
+  const start = (currentPage.value - 1) * ITEMS_PER_PAGE
+  const end = start + ITEMS_PER_PAGE
+  return filteredTasks.value.slice(start, end)
 })
 
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-}
-
+// Task Operations
 const loadTasks = async () => {
   loading.value = true
   error.value = null
   try {
     tasks.value = await taskService.getTasks()
-  } catch (error) {
+  } catch (_err: unknown) {
     error.value = 'Failed to load tasks'
   } finally {
     loading.value = false
   }
 }
 
-onMounted(() => {
-  loadTasks()
-})
+const handleEdit = (task: Task) => {
+  taskToEdit.value = { ...task }
+  showEditModal.value = true
+}
 
+const handleDelete = (task: Task) => {
+  openDeleteModal(task)
+}
+
+const confirmDelete = async () => {
+  if (!itemToDelete.value) return
+
+  try {
+    await taskService.deleteTask(itemToDelete.value.id)
+    await loadTasks()
+
+    const lastPage = Math.ceil(tasks.value.length / ITEMS_PER_PAGE)
+    if (currentPage.value > lastPage && currentPage.value > 1) {
+      currentPage.value = lastPage
+    }
+
+    closeDeleteModal()
+    setTimeout(() => {
+      showToast('Task deleted successfully', 'success')
+    }, 100)
+  } catch (_err: unknown) {
+    showToast('Failed to delete task', 'error')
+  }
+}
+
+// Utility Functions
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -397,87 +475,57 @@ const formatDate = (date: string) => {
   })
 }
 
-const showTooltip = ref(false)
-
 const formatStatus = (status: string): string => {
-  switch (status) {
-    case 'pending':
-      return 'Pending'
-    case 'in_progress':
-      return 'In Progress'
-    case 'completed':
-      return 'Completed'
-    default:
-      return status.charAt(0).toUpperCase() + status.slice(1)
-  }
+  return STATUS_MAP[status as keyof typeof STATUS_MAP] || status
 }
 
 const getStatusColor = (status: string): string => {
-  switch (status) {
-    case 'pending':
-      return '#FF4B4B'
-    case 'in_progress':
-      return '#FFB800'
-    case 'completed':
-      return '#00B884'
-    default:
-      return '#64748b'
-  }
+  return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || '#64748b'
 }
 
-const handleEdit = (task: Task) => {
-  taskToEdit.value = { ...task } // Clone the task
-  showEditModal.value = true
+const truncateDescription = (description: string | null): string => {
+  if (!description) return 'No description'
+  return description.length > 250 ? `${description.slice(0, 250)}...` : description
 }
 
-const showToastMessage = (message: string, type: 'success' | 'error' = 'success') => {
-  toastMessage.value = message
-  toastType.value = type
-  showToast.value = true
-  setTimeout(() => {
-    showToast.value = false
-  }, 3000)
+const isOverdue = (dueDate: string): boolean => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const taskDueDate = new Date(dueDate)
+  taskDueDate.setHours(0, 0, 0, 0)
+  return taskDueDate < today
 }
 
-const confirmDelete = async () => {
-  if (!taskToDelete.value) return
-
-  isDeletingTask.value = true
-  try {
-    await taskService.deleteTask(taskToDelete.value.id)
-    await loadTasks()
-    showDeleteModal.value = false
-    taskToDelete.value = null
-    showToastMessage('Task deleted successfully')
-  } catch (error) {
-    showToastMessage('Failed to delete task', 'error')
-  } finally {
-    isDeletingTask.value = false
-  }
+// Pagination
+const handlePageChange = (page: number) => {
+  currentPage.value = page
 }
 
-const handleDelete = (task: Task) => {
-  taskToDelete.value = task
-  showDeleteModal.value = true
+// Search handler with debounce
+const handleSearch = () => {
+  isSearching.value = true
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    isSearching.value = false
+  }, 500)
 }
 
-// Add/remove body class when modal opens/closes
+// Add watcher for search query to reset pagination
+watch(searchQuery, () => {
+  currentPage.value = 1 // Reset to first page when search changes
+})
+
+// Lifecycle
+onMounted(loadTasks)
+
+// Watchers
 watch([showModal, showEditModal], ([newShowModal, newShowEditModal]) => {
   if (newShowModal || newShowEditModal) {
     document.body.classList.add('modal-open')
   } else {
     document.body.classList.remove('modal-open')
-    document.body.style.overflow = '' // Reset overflow
   }
 })
-
-const isOverdue = (dueDate: string): boolean => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0) // Reset time to start of day
-  const taskDueDate = new Date(dueDate)
-  taskDueDate.setHours(0, 0, 0, 0)
-  return taskDueDate < today
-}
 </script>
 
 <style scoped>
@@ -638,7 +686,7 @@ tr td:last-child {
   display: inline-block;
 }
 
-.status-badge.todo,
+.status-badge.pending,
 .status-badge.in_progress,
 .status-badge.completed,
 .status-badge.overdue {
@@ -917,8 +965,14 @@ tr td:last-child {
 }
 
 .empty-state p {
-  margin: 0 0 1.5rem;
+  margin: 0;
   font-size: 1rem;
+}
+
+.empty-subtitle {
+  font-size: 0.875rem;
+  margin-top: 0.5rem !important;
+  opacity: 0.8;
 }
 
 .empty-card {
@@ -954,49 +1008,26 @@ tr td:last-child {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
   display: flex;
-  justify-content: center;
-  align-items: flex-start; /* Changed from center */
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
   z-index: 1000;
-  backdrop-filter: blur(3px);
-  padding: 2rem;
-  overflow-y: auto; /* Enable scrolling */
-}
-
-/* Ensure table is scrollable on smaller screens */
-.task-table-container {
-  width: 100%;
-  overflow-x: auto;
-  margin-top: 1rem;
-}
-
-.task-table {
-  width: 100%;
-  min-width: 800px; /* Ensure minimum width */
-}
-
-/* When modal is open, prevent main content scroll but keep it visible */
-body.modal-open {
-  overflow: hidden;
-  padding-right: 15px; /* Prevent layout shift */
 }
 
 .modal {
-  background: #1a2634;
-  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 16px;
   padding: 2rem;
   width: 90%;
   max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  transform: scale(1);
-  transition: transform 0.2s ease;
-}
-
-.modal:hover {
-  transform: scale(1.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transform: translateY(0); /* Reset any transform */
+  margin: 0; /* Reset any margin */
 }
 
 .modal-content {
@@ -1222,5 +1253,65 @@ body.modal-open {
 /* Ensure mobile cards also show overdue state */
 .task-card.overdue {
   background: rgba(239, 68, 68, 0.1);
+}
+
+.empty-description {
+  font-style: italic;
+  color: #64748b; /* light gray */
+  opacity: 0.8;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 400px;
+  height: 40px;
+}
+
+.search-bar input {
+  background: transparent;
+  border: none;
+  color: white;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.search-bar input::placeholder {
+  color: #64748b;
+}
+
+.search-bar input:focus {
+  outline: none;
+}
+
+.search-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.header-top h2 {
+  margin: 0;
+  min-width: fit-content;
 }
 </style>

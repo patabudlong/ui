@@ -98,21 +98,22 @@
         </div>
       </div>
 
-      <!-- Replace empty state with tasks list -->
       <div class="tasks-list">
-        <div class="task-item">
+        <div v-for="task in paginatedTasks" :key="task.id" class="task-item">
           <div class="task-content">
-            <div class="task-status" data-status="IN_PROGRESS"></div>
+            <div class="task-status" :data-status="task.status"></div>
             <div class="task-info">
-              <h3>Design User Interface</h3>
-              <p>Create modern UI design for the dashboard</p>
+              <h3>{{ task.title }}</h3>
+              <p class="description" :class="{ 'no-description': !task.description }">
+                {{ task.description || 'No description' }}
+              </p>
               <div class="task-meta">
-                <span class="due-date">Due: Mar 25, 2024</span>
+                <span class="due-date">Due: {{ formatDate(task.due_date) }}</span>
               </div>
             </div>
           </div>
           <div class="task-actions">
-            <button class="action-btn edit">
+            <button class="action-btn edit" @click="handleEdit(task)">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -128,55 +129,7 @@
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
             </button>
-            <button class="action-btn delete">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M3 6h18"></path>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="task-item">
-          <div class="task-content">
-            <div class="task-status" data-status="TODO"></div>
-            <div class="task-info">
-              <h3>Implement Authentication</h3>
-              <p>Set up user authentication system with JWT</p>
-              <div class="task-meta">
-                <span class="due-date">Due: Mar 28, 2024</span>
-              </div>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="action-btn edit">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </button>
-            <button class="action-btn delete">
+            <button class="action-btn delete" @click="handleDelete(task)">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -196,9 +149,67 @@
           </div>
         </div>
       </div>
+
+      <!-- Pagination -->
+      <div v-if="tasks.length > itemsPerPage" class="pagination">
+        <button
+          class="page-btn"
+          :disabled="currentPage === 1"
+          @click="handlePageChange(currentPage - 1)"
+          title="Previous page"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+
+        <div class="page-numbers">
+          <button
+            v-for="page in totalPages"
+            :key="page"
+            class="page-number"
+            :class="{ active: page === currentPage }"
+            @click="handlePageChange(page)"
+          >
+            {{ page }}
+          </button>
+        </div>
+
+        <button
+          class="page-btn"
+          :disabled="currentPage === totalPages"
+          @click="handlePageChange(currentPage + 1)"
+          title="Next page"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              d="M9 18l6-6-6-6"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <TaskForm v-if="showTaskForm" @close="showTaskForm = false" />
+    <TaskForm
+      v-if="showTaskForm"
+      :taskToEdit="taskToEdit"
+      :mode="formMode"
+      @close="closeForm"
+      @success="handleFormSuccess"
+    />
+
+    <!-- Add toast -->
+    <div v-if="toast" class="toast" :class="toast.type">
+      {{ toast.message }}
+    </div>
   </div>
 </template>
 
@@ -207,11 +218,16 @@ import { ref, computed, onMounted } from 'vue'
 import TaskForm from '@/components/TaskForm.vue'
 import { useRouter } from 'vue-router'
 import { taskService, type Task } from '../services/tasks'
+import { useToast } from '@/composables/useToast'
 
 const showTaskForm = ref(false)
 const router = useRouter()
 const tasks = ref<Task[]>([])
 const isLoading = ref(false)
+const taskToEdit = ref<Task | null>(null)
+const formMode = ref<'create' | 'edit'>('create')
+
+const { showToast, toast } = useToast()
 
 // Stats computations
 const totalTasks = computed(() => tasks.value.length)
@@ -221,6 +237,18 @@ const inProgressTasks = computed(
 const completedTasks = computed(
   () => tasks.value.filter((task) => task.status === 'completed').length,
 )
+
+// Pagination
+const currentPage = ref(1)
+const itemsPerPage = 5
+const totalPages = computed(() => Math.ceil(tasks.value.length / itemsPerPage))
+
+// Get paginated tasks
+const paginatedTasks = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return tasks.value.slice(start, end)
+})
 
 const loadTasks = async () => {
   isLoading.value = true
@@ -243,6 +271,49 @@ const navigateToTasks = () => {
 
 const handleRefresh = () => {
   loadTasks()
+}
+
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+const handleEdit = (task: Task) => {
+  taskToEdit.value = task
+  formMode.value = 'edit'
+  showTaskForm.value = true
+}
+
+const handleDelete = async (task: Task) => {
+  if (confirm('Are you sure you want to delete this task?')) {
+    try {
+      await taskService.deleteTask(task.id)
+      loadTasks()
+      showToast('Task deleted successfully', 'success')
+    } catch (error) {
+      console.error('Failed to delete task:', error)
+      showToast('Failed to delete task', 'error')
+    }
+  }
+}
+
+const closeForm = () => {
+  showTaskForm.value = false
+  taskToEdit.value = null
+  formMode.value = 'create'
+}
+
+const handleFormSuccess = () => {
+  loadTasks()
+  closeForm()
+  showToast('Task updated successfully', 'success')
+}
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
 }
 </script>
 
@@ -414,15 +485,15 @@ svg {
 
 /* Different gradient for each stat item */
 .stat-item:nth-child(1)::before {
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  background: linear-gradient(135deg, #3b82f6, #60a5fa); /* Blue for Total */
 }
 
 .stat-item:nth-child(2)::before {
-  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+  background: linear-gradient(135deg, #f59e0b, #fbbf24); /* Yellow/Amber for In Progress */
 }
 
 .stat-item:nth-child(3)::before {
-  background: linear-gradient(135deg, #10b981, #34d399);
+  background: linear-gradient(135deg, #10b981, #34d399); /* Green for Completed */
 }
 
 .stat-item:hover::before {
@@ -456,7 +527,7 @@ svg {
 }
 
 .stat-item:nth-child(2) {
-  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.1);
 }
 
 .stat-item:nth-child(3) {
@@ -543,14 +614,14 @@ svg {
 .tasks-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .task-item {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 1.25rem;
+  border-radius: 12px;
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -576,36 +647,42 @@ svg {
   flex-shrink: 0;
 }
 
-.task-status[data-status='TODO'] {
+.task-status[data-status='todo'] {
   background: #f97316;
   box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
 }
 
-.task-status[data-status='IN_PROGRESS'] {
+.task-status[data-status='in_progress'] {
   background: #3b82f6;
   box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
 }
 
-.task-status[data-status='COMPLETED'] {
+.task-status[data-status='completed'] {
   background: #10b981;
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
 }
 
+.task-status[data-status='pending'] {
+  background: #f59e0b;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
 .task-info h3 {
   color: #f8fafc;
-  font-size: 1.1rem;
-  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  margin: 0 0 0.2rem;
 }
 
 .task-info p {
   color: #94a3b8;
-  font-size: 0.95rem;
-  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
 }
 
 .task-meta {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
 }
 
 .due-date {
@@ -619,26 +696,31 @@ svg {
 }
 
 .action-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 0.5rem;
-  color: #94a3b8;
   cursor: pointer;
   transition: all 0.2s;
+  border: none;
 }
 
-.action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
+.action-btn.edit {
+  color: #3b82f6; /* Blue color */
+  background: rgba(59, 130, 246, 0.1); /* Transparent blue */
 }
 
 .action-btn.edit:hover {
-  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.2); /* More visible on hover */
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+}
+
+.action-btn.delete {
+  color: #ef4444; /* Red color */
+  background: rgba(239, 68, 68, 0.1); /* Transparent red */
 }
 
 .action-btn.delete:hover {
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.2); /* More visible on hover */
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
 }
 
 @media (max-width: 768px) {
@@ -759,6 +841,102 @@ svg {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding: 1rem;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.page-btn,
+.page-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-btn:not(:disabled):hover,
+.page-number:not(.active):hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+.page-number.active {
+  background: #f89c1c;
+  color: white;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .pagination {
+    gap: 0.25rem;
+  }
+
+  .page-btn,
+  .page-number {
+    min-width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.813rem;
+  }
+}
+
+.description.no-description {
+  color: #64748b; /* Lighter color for placeholder */
+  font-style: italic;
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+}
+
+.toast.success {
+  background: #10b981;
+}
+
+.toast.error {
+  background: #ef4444;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
   }
 }
 </style>

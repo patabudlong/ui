@@ -14,8 +14,9 @@ const showErrorDialog = ref(false)
 const handleLogin = async () => {
   try {
     loading.value = true
-    await authService.login(email.value, password.value)
+    const response = await authService.login(email.value, password.value)
     localStorage.setItem('isAuthenticated', 'true')
+    localStorage.setItem('userName', response.user.name)
     router.push('/')
   } catch (_error) {
     showErrorDialog.value = true

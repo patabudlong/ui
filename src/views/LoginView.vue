@@ -186,6 +186,14 @@ input::placeholder {
   line-height: 1;
   position: relative;
   top: -1px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.forgot-password:hover {
+  color: #3b82f6;
+  background: transparent;
 }
 
 .login-button {
@@ -216,10 +224,14 @@ input::placeholder {
   color: #3b82f6;
   text-decoration: none;
   margin-left: 0.5rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .signup-link:hover {
-  color: #60a5fa;
+  color: #3b82f6;
+  background: transparent;
 }
 
 @media (max-width: 768px) {

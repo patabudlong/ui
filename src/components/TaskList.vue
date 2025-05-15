@@ -109,8 +109,11 @@
           >
             <td>{{ task.title }}</td>
             <td>
-              <span :class="{ 'empty-description': !task.description }">
-                {{ task.description || 'No description' }}
+              <span
+                :class="{ 'empty-description': !task.description }"
+                :title="task.description || 'No description'"
+              >
+                {{ truncateDescription(task.description) }}
               </span>
             </td>
             <td>
@@ -269,8 +272,12 @@
               {{ formatStatus(task.status) }}
             </span>
           </div>
-          <p class="card-description" :class="{ 'empty-description': !task.description }">
-            {{ task.description || 'No description' }}
+          <p
+            class="card-description"
+            :class="{ 'empty-description': !task.description }"
+            :title="task.description || 'No description'"
+          >
+            {{ truncateDescription(task.description) }}
           </p>
           <div class="card-footer">
             <span class="due-date">Created: {{ formatDate(task.created_at) }}</span>
@@ -483,6 +490,12 @@ const isOverdue = (dueDate: string): boolean => {
   const taskDueDate = new Date(dueDate)
   taskDueDate.setHours(0, 0, 0, 0)
   return taskDueDate < today
+}
+
+// Add truncate function
+const truncateDescription = (description: string | null): string => {
+  if (!description) return 'No description'
+  return description.length > 150 ? `${description.slice(0, 150)}...` : description
 }
 </script>
 

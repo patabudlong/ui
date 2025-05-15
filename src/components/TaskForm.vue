@@ -176,12 +176,23 @@ const errors = reactive({
 })
 
 const hasChanges = computed(() => {
-  return (
-    task.title !== props.taskToEdit?.title ||
-    task.description !== props.taskToEdit?.description ||
-    task.due_date !== props.taskToEdit?.due_date ||
-    task.status !== props.taskToEdit?.status
-  )
+  if (props.mode === 'edit' && props.taskToEdit) {
+    // In edit mode, compare with original values
+    return (
+      task.title !== props.taskToEdit.title ||
+      task.description !== props.taskToEdit.description ||
+      task.due_date !== props.taskToEdit.due_date ||
+      task.status !== props.taskToEdit.status
+    )
+  } else {
+    // In create mode, check if any field has been filled
+    return (
+      task.title.trim() !== '' ||
+      task.description.trim() !== '' ||
+      task.due_date !== '' ||
+      task.status !== 'pending'
+    )
+  }
 })
 
 const validateForm = (): boolean => {
@@ -300,7 +311,7 @@ const handleClose = () => {
     showConfirmDialog.value = true
     document.body.style.overflow = 'hidden'
   } else {
-    resetValidation() // Reset validation on close
+    resetValidation()
     emit('close')
   }
 }

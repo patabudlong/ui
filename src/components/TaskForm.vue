@@ -241,7 +241,7 @@ const emit = defineEmits(['close'])
   justify-content: center;
   align-items: flex-start;
   z-index: 1000;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(3px);
   padding: 2rem;
   overflow-y: auto;
   overflow-x: hidden;
@@ -361,16 +361,37 @@ textarea {
 
 select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  font-size: 1rem;
+  background: white;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
-  background-size: 1.5em;
-  padding-right: 2.5rem;
+  background-size: 1rem;
+  padding-right: 3rem;
 }
 
-select option {
-  background-color: white;
-  color: #0f172a;
+select:disabled {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23CBD5E1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  cursor: not-allowed;
+  opacity: 0.6;
+  background-color: #f8fafc;
+}
+
+select:hover:not(:disabled) {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .submit-btn {

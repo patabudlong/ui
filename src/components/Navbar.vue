@@ -48,25 +48,75 @@ export default defineComponent({
 .logo {
   text-decoration: none;
   color: white;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+.logo:hover,
+.logo:active,
+.logo:focus,
+.logo:visited {
+  color: white !important;
+  text-decoration: none !important;
+  outline: none !important;
+  background: transparent !important;
 }
 
 .nav-links {
   margin-right: 2rem;
   display: flex;
   gap: 2rem;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .nav-link {
-  text-decoration: none;
-  color: white;
+  text-decoration: none !important;
+  color: white !important;
   font-weight: 500;
   font-size: 18px;
+  /* Remove all possible highlight effects */
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
 }
 
-/* Remove the hover state completely */
-.nav-link:hover {
-  color: white;
+/* Remove all possible states */
+.nav-link:hover,
+.nav-link:active,
+.nav-link:focus,
+.nav-link:visited,
+.router-link-active,
+.router-link-exact-active,
+.router-link-active.nav-link,
+.router-link-exact-active.nav-link {
+  color: white !important;
+  text-decoration: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+
+/* Additional specificity */
+a.router-link-active,
+a.router-link-exact-active,
+a.nav-link,
+.navbar a.nav-link,
+.navbar a.router-link-active,
+.navbar a.router-link-exact-active {
+  color: white !important;
+  background: transparent !important;
+}
+
+/* Reset transitions */
+* {
+  transition: none !important;
 }
 
 /* Responsive design */
@@ -118,5 +168,11 @@ export default defineComponent({
   height: 60px;
   width: auto;
   transition: all 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 </style>

@@ -13,7 +13,9 @@ export default defineComponent({
 <template>
   <div class="app">
     <Navbar />
-    <router-view></router-view>
+    <main class="main-content">
+      <router-view></router-view>
+    </main>
   </div>
 </template>
 
@@ -35,5 +37,9 @@ body {
 
 .app {
   min-height: 100vh;
+}
+
+.main-content {
+  padding-top: 120px; /* Adjust this value based on your navbar height */
 }
 </style>

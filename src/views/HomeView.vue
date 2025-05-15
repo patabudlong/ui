@@ -89,7 +89,7 @@
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="text" placeholder="Search tasks..." />
+          <input type="text" v-model="searchQuery" placeholder="Search tasks..." />
         </div>
         <div class="view-options">
           <button class="view-btn active">All</button>
@@ -227,7 +227,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import TaskForm from '@/components/TaskForm.vue'
 import { useRouter } from 'vue-router'
 import { taskService, type Task } from '../services/tasks'
@@ -258,11 +258,33 @@ const currentPage = ref(1)
 const itemsPerPage = 5
 const totalPages = computed(() => Math.ceil(tasks.value.length / itemsPerPage))
 
-// Get paginated tasks
+// Add search ref
+const searchQuery = ref('')
+
+// Update paginatedTasks computed to include search
+const filteredTasks = computed(() => {
+  if (!searchQuery.value) return tasks.value
+
+  const query = searchQuery.value.toLowerCase()
+  return tasks.value.filter(
+    (task) =>
+      task.title.toLowerCase().includes(query) ||
+      (task.description && task.description.toLowerCase().includes(query)),
+  )
+})
+
 const paginatedTasks = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
-  return tasks.value.slice(start, end)
+  return filteredTasks.value.slice(start, end)
+})
+
+// Update totalPages to use filtered tasks
+const totalPagesFiltered = computed(() => Math.ceil(filteredTasks.value.length / itemsPerPage))
+
+// Reset page when search changes
+watch(searchQuery, () => {
+  currentPage.value = 1
 })
 
 const loadTasks = async () => {

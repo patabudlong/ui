@@ -1,26 +1,46 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { authService } from '@/services/auth'
 
 const router = useRouter()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const isConnected = ref(false)
+const loading = ref(false)
 
 const handleLogin = async () => {
-  // Simple auth check
-  if (email.value === 'test@test.com' && password.value === 'pass') {
+  try {
+    loading.value = true
+    await authService.login(email.value, password.value)
     localStorage.setItem('isAuthenticated', 'true')
     router.push('/')
-  } else {
+  } catch (error) {
     alert('Invalid credentials')
+  } finally {
+    loading.value = false
   }
 }
+
+onMounted(async () => {
+  try {
+    await authService.checkConnection()
+    isConnected.value = true
+    // console.log('Connected to server')
+  } catch (_error) {
+    isConnected.value = false
+    // alert('Cannot connect to server')
+  }
+})
 </script>
 
 <template>
   <div class="login-view">
     <div class="login-card">
+      <div class="connection-status" :class="{ connected: isConnected }">
+        {{ isConnected ? '🟢 Connected' : '🔴 Not Connected' }}
+      </div>
       <div class="logo">
         <img src="@/assets/sapere-logo.PNG" alt="Sapere Logo" />
       </div>
@@ -84,7 +104,9 @@ const handleLogin = async () => {
           <a href="#" class="forgot-password">Forgot password?</a>
         </div>
 
-        <button type="submit" class="login-button">Sign In</button>
+        <button type="submit" class="login-button" :disabled="loading">
+          {{ loading ? 'Signing in...' : 'Sign In' }}
+        </button>
 
         <div class="signup-prompt">
           <span>Don't have an account?</span>
@@ -273,6 +295,18 @@ input::placeholder {
 .signup-link:hover {
   color: #3b82f6;
   background: transparent;
+}
+
+.connection-status {
+  position: absolute;
+  top: 1rem;
+  right: 2rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.connection-status.connected {
+  color: #4caf50;
 }
 
 @media (max-width: 768px) {

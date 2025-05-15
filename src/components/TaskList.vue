@@ -2,7 +2,33 @@
   <div class="table-container">
     <div class="table-header">
       <div class="header-content">
-        <h2>Tasks</h2>
+        <div class="header-top">
+          <h2>Tasks</h2>
+          <div class="search-bar">
+            <svg
+              v-if="!isSearching"
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <div v-else class="spinner search-spinner"></div>
+            <input
+              type="text"
+              v-model="searchQuery"
+              placeholder="Search tasks..."
+              @input="handleSearch"
+            />
+          </div>
+        </div>
         <div class="description-container">
           <p class="header-description">Manage your tasks and track their progress</p>
           <div class="tooltip-container">
@@ -74,7 +100,7 @@
             </div>
           </td>
         </tr>
-        <tr v-else-if="tasks.length === 0" class="empty-row">
+        <tr v-else-if="filteredTasks.length === 0" class="empty-row">
           <td colspan="5">
             <div class="empty-state">
               <svg
@@ -88,16 +114,13 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="12" y1="18" x2="12" y2="12"></line>
-                <line x1="9" y1="15" x2="15" y2="15"></line>
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="11" y1="8" x2="11" y2="14"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
               </svg>
               <p>No tasks found</p>
-              <button class="new-task-btn" @click="showModal = true">
-                <span class="plus-icon">+</span>
-                Create New Task
-              </button>
+              <p class="empty-subtitle">Try adjusting your search</p>
             </div>
           </td>
         </tr>
@@ -175,7 +198,7 @@
     </table>
 
     <!-- Modern Pagination -->
-    <div v-if="tasks.length > ITEMS_PER_PAGE" class="pagination">
+    <div v-if="filteredTasks.length > ITEMS_PER_PAGE" class="pagination">
       <button
         class="page-btn"
         :disabled="currentPage === 1"
@@ -378,13 +401,26 @@ const showEditModal = ref(false)
 const taskToEdit = ref<Task | null>(null)
 const currentPage = ref(1)
 const showTooltip = ref(false)
+const searchQuery = ref('')
+const isSearching = ref(false)
+let searchTimeout: NodeJS.Timeout
 
 // Computed
-const totalPages = computed(() => Math.ceil(tasks.value.length / ITEMS_PER_PAGE))
+const totalPages = computed(() => Math.ceil(filteredTasks.value.length / ITEMS_PER_PAGE))
+const filteredTasks = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim()
+  if (!query) return tasks.value
+
+  return tasks.value.filter(
+    (task) =>
+      task.title.toLowerCase().includes(query) ||
+      (task.description?.toLowerCase() || '').includes(query),
+  )
+})
 const paginatedTasks = computed(() => {
   const start = (currentPage.value - 1) * ITEMS_PER_PAGE
   const end = start + ITEMS_PER_PAGE
-  return tasks.value.slice(start, end)
+  return filteredTasks.value.slice(start, end)
 })
 
 // Task Operations
@@ -464,6 +500,20 @@ const isOverdue = (dueDate: string): boolean => {
 const handlePageChange = (page: number) => {
   currentPage.value = page
 }
+
+// Search handler with debounce
+const handleSearch = () => {
+  isSearching.value = true
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    isSearching.value = false
+  }, 500)
+}
+
+// Add watcher for search query to reset pagination
+watch(searchQuery, () => {
+  currentPage.value = 1 // Reset to first page when search changes
+})
 
 // Lifecycle
 onMounted(loadTasks)
@@ -915,8 +965,14 @@ tr td:last-child {
 }
 
 .empty-state p {
-  margin: 0 0 1.5rem;
+  margin: 0;
   font-size: 1rem;
+}
+
+.empty-subtitle {
+  font-size: 0.875rem;
+  margin-top: 0.5rem !important;
+  opacity: 0.8;
 }
 
 .empty-card {
@@ -1203,5 +1259,59 @@ tr td:last-child {
   font-style: italic;
   color: #64748b; /* light gray */
   opacity: 0.8;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 400px;
+  height: 40px;
+}
+
+.search-bar input {
+  background: transparent;
+  border: none;
+  color: white;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.search-bar input::placeholder {
+  color: #64748b;
+}
+
+.search-bar input:focus {
+  outline: none;
+}
+
+.search-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.header-top h2 {
+  margin: 0;
+  min-width: fit-content;
 }
 </style>

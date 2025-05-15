@@ -34,16 +34,42 @@
     <div class="stats-bar">
       <div class="stat-item">
         <span class="stat-label">Total Tasks</span>
-        <span class="stat-value">{{ totalTasks }}</span>
+        <span class="stat-value">
+          <span v-if="!isLoading">{{ totalTasks }}</span>
+          <div v-else class="spinner"></div>
+        </span>
       </div>
       <div class="stat-item">
         <span class="stat-label">In Progress</span>
-        <span class="stat-value">{{ inProgressTasks }}</span>
+        <span class="stat-value">
+          <span v-if="!isLoading">{{ inProgressTasks }}</span>
+          <div v-else class="spinner"></div>
+        </span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Completed</span>
-        <span class="stat-value">{{ completedTasks }}</span>
+        <span class="stat-value">
+          <span v-if="!isLoading">{{ completedTasks }}</span>
+          <div v-else class="spinner"></div>
+        </span>
       </div>
+      <button class="refresh-btn" @click="handleRefresh" :disabled="isLoading">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          :class="{ rotating: isLoading }"
+        >
+          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+          <path d="M21 3v5h-5" />
+        </svg>
+      </button>
     </div>
 
     <div class="tasks-container">
@@ -185,6 +211,7 @@ import { taskService, type Task } from '../services/tasks'
 const showTaskForm = ref(false)
 const router = useRouter()
 const tasks = ref<Task[]>([])
+const isLoading = ref(false)
 
 // Stats computations
 const totalTasks = computed(() => tasks.value.length)
@@ -196,10 +223,13 @@ const completedTasks = computed(
 )
 
 const loadTasks = async () => {
+  isLoading.value = true
   try {
     tasks.value = await taskService.getTasks()
   } catch (error) {
     console.error('Failed to load tasks:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -209,6 +239,10 @@ onMounted(() => {
 
 const navigateToTasks = () => {
   router.push('/tasks')
+}
+
+const handleRefresh = () => {
+  loadTasks()
 }
 </script>
 
@@ -404,11 +438,13 @@ svg {
 }
 
 .stat-value {
-  color: #f8fafc;
-  font-size: 2rem;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   font-weight: 700;
-  position: relative;
-  z-index: 1;
+  font-size: 2rem;
+  color: #f8fafc;
   background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.8));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -679,6 +715,50 @@ svg {
   .link-content {
     justify-content: center;
     font-size: 1rem;
+  }
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0;
+  margin-left: 0;
+}
+
+.refresh-btn {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rotating {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

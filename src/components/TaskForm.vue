@@ -147,7 +147,7 @@ textarea {
 }
 
 .submit-btn {
-  background-color: #0f172a; /* Updated dark blue color */
+  background-color: #0b1121; /* Updated to match the dark blue */
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -156,9 +156,10 @@ textarea {
   font-size: 1rem;
   width: 100%;
   margin-top: 1rem;
+  transition: background-color 0.2s;
 }
 
 .submit-btn:hover {
-  background-color: #1a2542; /* Slightly lighter dark blue for hover */
+  background-color: #141e33; /* Slightly lighter for hover state */
 }
 </style>

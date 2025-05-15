@@ -23,15 +23,29 @@ const handleRegister = async () => {
 
   try {
     loading.value = true
+    console.log('Registering with:', {
+      name: name.value,
+      email: email.value,
+      password: password.value,
+      password_confirmation: confirmPassword.value,
+    })
+
     await authService.register({
       name: name.value,
       email: email.value,
       password: password.value,
+      password_confirmation: confirmPassword.value,
     })
+
     showToast('Registration successful', 'success')
-    router.push('/login')
+    router.push('/auth/login')
   } catch (error) {
-    showToast('Registration failed', 'error')
+    console.error('Registration error:', error)
+    if (error instanceof Error) {
+      showToast(error.message, 'error')
+    } else {
+      showToast('An unexpected error occurred', 'error')
+    }
   } finally {
     loading.value = false
   }

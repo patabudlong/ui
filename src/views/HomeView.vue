@@ -210,6 +210,19 @@
     <div v-if="toast" class="toast" :class="toast.type">
       {{ toast.message }}
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="modal-overlay">
+      <div class="confirm-dialog" @mouseenter="handleHover(true)" @mouseleave="handleHover(false)">
+        <h3>Delete Task</h3>
+        <p>Are you sure you want to delete "{{ itemToDelete?.title }}"?</p>
+        <p class="warning">This action cannot be undone.</p>
+        <div class="dialog-actions">
+          <button class="cancel-btn" @click="closeDeleteModal">Cancel</button>
+          <button class="confirm-btn" @click="confirmDelete">Delete</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -219,6 +232,7 @@ import TaskForm from '@/components/TaskForm.vue'
 import { useRouter } from 'vue-router'
 import { taskService, type Task } from '../services/tasks'
 import { useToast } from '@/composables/useToast'
+import { useDeleteModal } from '@/composables/useDeleteModal'
 
 const showTaskForm = ref(false)
 const router = useRouter()
@@ -228,6 +242,7 @@ const taskToEdit = ref<Task | null>(null)
 const formMode = ref<'create' | 'edit'>('create')
 
 const { showToast, toast } = useToast()
+const { showDeleteModal, itemToDelete, openDeleteModal, closeDeleteModal } = useDeleteModal()
 
 // Stats computations
 const totalTasks = computed(() => tasks.value.length)
@@ -287,16 +302,29 @@ const handleEdit = (task: Task) => {
   showTaskForm.value = true
 }
 
-const handleDelete = async (task: Task) => {
-  if (confirm('Are you sure you want to delete this task?')) {
-    try {
-      await taskService.deleteTask(task.id)
-      loadTasks()
-      showToast('Task deleted successfully', 'success')
-    } catch (error) {
-      console.error('Failed to delete task:', error)
-      showToast('Failed to delete task', 'error')
+const handleDelete = (task: Task) => {
+  openDeleteModal({ id: task.id, title: task.title })
+}
+
+const confirmDelete = async () => {
+  if (!itemToDelete.value) return
+
+  try {
+    await taskService.deleteTask(itemToDelete.value.id)
+    await loadTasks()
+
+    // Update current page if we're on an empty page
+    const maxPage = Math.ceil(tasks.value.length / itemsPerPage)
+    if (currentPage.value > maxPage && maxPage > 0) {
+      currentPage.value = maxPage
     }
+
+    showToast('Task deleted successfully', 'success')
+  } catch (error) {
+    console.error('Failed to delete task:', error)
+    showToast('Failed to delete task', 'error')
+  } finally {
+    closeDeleteModal()
   }
 }
 
@@ -938,5 +966,90 @@ svg {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.8); /* Darker blue background */
+  backdrop-filter: blur(8px); /* Add blur effect */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirm-dialog {
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.confirm-dialog:hover {
+  transform: scale(1.02);
+}
+
+.confirm-dialog h3 {
+  color: #f8fafc;
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.confirm-dialog p {
+  color: #94a3b8;
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.warning {
+  color: #64748b !important;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem !important;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.confirm-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirm-btn:hover {
+  background: #dc2626;
 }
 </style>

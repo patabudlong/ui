@@ -244,21 +244,44 @@ const handleSubmit = async () => {
   }
 }
 
-const handleClose = () => {
-  if (hasChanges.value) {
-    showConfirmDialog.value = true
-  } else {
-    emit('close')
-  }
+const resetValidation = () => {
+  errors.title = ''
+  errors.dueDate = ''
+  errors.status = ''
+}
+
+const resetForm = () => {
+  // Reset form data
+  task.title = ''
+  task.description = ''
+  task.due_date = ''
+  task.status = 'pending'
+
+  // Reset validation
+  resetValidation()
 }
 
 const confirmClose = () => {
   showConfirmDialog.value = false
+  document.body.style.overflow = ''
+  resetForm()
   emit('close')
+}
+
+const handleClose = () => {
+  if (hasChanges.value) {
+    showConfirmDialog.value = true
+    document.body.style.overflow = 'hidden'
+  } else {
+    resetForm()
+    emit('close')
+  }
 }
 
 const cancelClose = () => {
   showConfirmDialog.value = false
+  document.body.style.overflow = ''
+  resetValidation()
 }
 </script>
 
@@ -281,27 +304,32 @@ const cancelClose = () => {
 }
 
 .modal {
-  background: linear-gradient(145deg, #f97316 0%, #f59e0b 100%);
+  background: #1a2634;
   border-radius: 24px;
   width: 90%;
-  max-width: 800px;
+  max-width: 600px;
   margin: auto;
   position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-height: 90vh; /* Limit height */
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
-  padding: 2.5rem 2.5rem 0;
-  background: inherit;
+  background: linear-gradient(145deg, #f89c1c 0%, #ff9d2f 100%); /* Keep orange header */
+  padding: 1.5rem 1.5rem 0;
   border-radius: 24px 24px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .modal-header h2 {
   color: white;
-  font-size: 1.75rem;
+  font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
   letter-spacing: -0.025em;
@@ -330,12 +358,15 @@ const cancelClose = () => {
 }
 
 .task-form {
-  padding: 2.5rem;
-  padding-top: 1.5rem;
+  background: #1a2634;
+  padding: 1.5rem;
+  border-radius: 0 0 24px 24px;
+  overflow: visible;
+  flex: 1; /* Take remaining space */
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   position: relative;
 }
 
@@ -349,22 +380,22 @@ label {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   font-weight: 500;
   color: white;
-  font-size: 0.95rem;
+  font-size: 0.813rem;
 }
 
 input,
 textarea,
 select {
   width: 100%;
-  padding: 1rem 1.25rem;
-  border: none;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  font-size: 1rem;
-  background: rgba(255, 255, 255, 0.95);
-  color: #0f172a;
+  font-size: 0.813rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
   transition: all 0.2s;
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.1),
@@ -375,11 +406,8 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  background: white;
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    inset 0 2px 4px rgba(0, 0, 0, 0.05),
-    0 0 0 3px rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 input::placeholder,
@@ -389,61 +417,75 @@ textarea::placeholder {
 
 textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 100px;
 }
 
 select {
   appearance: none;
   width: 100%;
-  padding: 1rem 1.25rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 16px;
-  font-size: 1rem;
-  background: white;
-  color: #1e293b;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: 0.813rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1rem;
-  padding-right: 3rem;
+  background-position: right 0.875rem center;
+  background-size: 0.875rem;
+  padding-right: 2.5rem;
 }
 
 select:disabled {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23CBD5E1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  opacity: 0.7;
   cursor: not-allowed;
-  opacity: 0.6;
-  background-color: #f8fafc;
-}
-
-select:hover:not(:disabled) {
-  border-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Style for the options */
+select option {
+  background: white; /* White background */
+  color: #0f172a; /* Dark text color */
+  padding: 0.625rem; /* Match select padding */
+  font-size: 0.813rem; /* Match select font size */
+}
+
+/* For Firefox */
+select:-moz-focusring {
+  color: transparent;
+  text-shadow: 0 0 0 #e2e8f0;
+}
+
+/* For Edge/IE */
+select::-ms-expand {
+  display: none;
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, #0b1121, #1e293b);
+  background: linear-gradient(135deg, #f89c1c, #ff9d2f); /* Orange gradient */
   color: white;
   border: none;
-  padding: 1rem 2rem;
+  padding: 0.625rem 1.25rem;
   border-radius: 12px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.813rem;
   font-weight: 500;
   width: 100%;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 3.25rem;
+  min-height: 2.5rem;
 }
 
 .spinner-container {
@@ -467,14 +509,15 @@ select:focus {
   }
 }
 
-.submit-btn:disabled {
-  opacity: 0.8;
-  cursor: not-allowed;
-}
-
 .submit-btn:not(:disabled):hover {
+  background: linear-gradient(135deg, #ff9d2f, #f89c1c); /* Reversed gradient on hover */
   transform: translateY(-1px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .header-content {
@@ -489,8 +532,9 @@ select:focus {
 }
 
 .header-description {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.813rem;
+  margin-bottom: 0.75rem;
 }
 
 .info-icon {
@@ -727,8 +771,8 @@ select:focus {
 
 .error-message {
   color: #811717;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  margin-top: 0.375rem;
   display: block;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -754,28 +798,17 @@ select:invalid {
 }
 
 /* Customize scrollbar for webkit browsers */
-.modal-overlay::-webkit-scrollbar {
+.task-form::-webkit-scrollbar {
   width: 8px;
 }
 
-.modal-overlay::-webkit-scrollbar-track {
+.task-form::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.task-form::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
-}
-
-.modal-overlay::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-}
-
-.modal-overlay::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
-}
-
-/* Firefox scrollbar styling */
-.modal-overlay {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
 }
 
 .confirm-dialog-overlay {
@@ -784,21 +817,28 @@ select:invalid {
   left: 0;
   width: 100%;
   height: 100%;
+  min-height: 100vh; /* Ensure full viewport height */
   background: rgba(15, 23, 42, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1100;
+  z-index: 9999;
   backdrop-filter: blur(4px);
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent scrolling */
 }
 
 .confirm-dialog {
+  position: relative;
+  z-index: 10000;
   background: white;
   border-radius: 16px;
   padding: 1.5rem;
   width: 90%;
   max-width: 400px;
-  animation: scaleIn 0.2s ease-out;
+  margin: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .confirm-dialog h3 {
@@ -847,17 +887,6 @@ select:invalid {
 
 .confirm-btn:hover {
   background: #dc2626;
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 
 @media (max-width: 768px) {

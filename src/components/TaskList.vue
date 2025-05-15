@@ -7,7 +7,9 @@
         New Task
       </button>
     </div>
-    <table class="task-table">
+
+    <!-- Desktop Table -->
+    <table class="task-table desktop-table">
       <thead>
         <tr>
           <th>Title</th>
@@ -19,15 +21,9 @@
       </thead>
       <tbody>
         <tr v-for="task in tasks" :key="task.id">
-          <td class="title-cell">
-            <div class="task-title">{{ task.title }}</div>
-          </td>
-          <td>
-            <div class="task-description">{{ task.description }}</div>
-          </td>
-          <td>
-            <div class="due-date">{{ formatDate(task.dueDate) }}</div>
-          </td>
+          <td>{{ task.title }}</td>
+          <td>{{ task.description }}</td>
+          <td>{{ formatDate(task.dueDate) }}</td>
           <td>
             <span class="status-badge" :class="task.status.toLowerCase()">
               {{ task.status }}
@@ -35,17 +31,33 @@
           </td>
           <td>
             <div class="task-actions">
-              <button class="action-btn edit">
-                <span>Edit</span>
-              </button>
-              <button class="action-btn delete">
-                <span>Delete</span>
-              </button>
+              <button class="action-btn edit">Edit</button>
+              <button class="action-btn delete">Delete</button>
             </div>
           </td>
         </tr>
       </tbody>
     </table>
+
+    <!-- Mobile Cards -->
+    <div class="mobile-cards">
+      <div v-for="task in tasks" :key="task.id" class="task-card">
+        <div class="card-header">
+          <h3>{{ task.title }}</h3>
+          <span class="status-badge" :class="task.status.toLowerCase()">
+            {{ task.status }}
+          </span>
+        </div>
+        <p class="card-description">{{ task.description }}</p>
+        <div class="card-footer">
+          <span class="due-date">Due: {{ formatDate(task.dueDate) }}</span>
+          <div class="task-actions">
+            <button class="action-btn edit">Edit</button>
+            <button class="action-btn delete">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -107,6 +119,7 @@ const formatDate = (date: string) => {
   color: white;
   font-size: 1.75rem;
   font-weight: 500;
+  margin: 0;
 }
 
 .new-task-btn {
@@ -234,6 +247,90 @@ tr td:last-child {
   td,
   th {
     padding: 1rem;
+  }
+
+  .table-header {
+    flex-direction: column-reverse;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+}
+
+.desktop-table {
+  display: table;
+}
+
+.mobile-cards {
+  display: none;
+}
+
+.task-card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.card-header h3 {
+  color: white;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.card-description {
+  color: #94a3b8;
+  margin: 0.75rem 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.due-date {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .desktop-table {
+    display: none;
+  }
+
+  .mobile-cards {
+    display: block;
+  }
+
+  .task-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    width: 100%;
+  }
+
+  .action-btn {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

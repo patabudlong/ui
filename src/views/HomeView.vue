@@ -10,23 +10,25 @@
           </p>
         </div>
       </div>
-      <!-- <button class="add-task-btn" @click="showTaskForm = true">
-        <span>New Task</span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-      </button> -->
+      <div class="nav-link" @click="navigateToTasks">
+        <div class="link-content">
+          <span>My Tasks</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </div>
+        <div class="link-highlight"></div>
+      </div>
     </div>
 
     <div class="stats-bar">
@@ -177,8 +179,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import TaskForm from '@/components/TaskForm.vue'
+import { useRouter } from 'vue-router'
 
 const showTaskForm = ref(false)
+const router = useRouter()
+
+const navigateToTasks = () => {
+  router.push('/tasks')
+}
 </script>
 
 <style scoped>
@@ -248,25 +256,68 @@ h1 {
   opacity: 0.8;
 }
 
-.add-task-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.nav-link {
+  position: relative;
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-top: -3rem;
 }
 
-.add-task-btn:hover {
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+.link-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #f8fafc;
+  font-weight: 500;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+}
+
+.link-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.nav-link:hover .link-highlight {
+  opacity: 0.15;
+}
+
+.nav-link:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgba(59, 130, 246, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.nav-link:hover svg {
+  transform: translateX(4px);
+}
+
+.nav-link:active {
+  transform: translateY(0px);
+}
+
+svg {
+  transition: all 0.3s ease;
+  stroke: #60a5fa;
+}
+
+.nav-link:hover svg {
+  stroke: #93c5fd;
 }
 
 .stats-bar {
@@ -594,6 +645,17 @@ h1 {
 
   .subtitle-details {
     font-size: 0.85rem;
+  }
+
+  .nav-link {
+    width: 100%;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .link-content {
+    justify-content: center;
+    font-size: 1rem;
   }
 }
 </style>

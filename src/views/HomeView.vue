@@ -40,6 +40,13 @@
         </span>
       </div>
       <div class="stat-item">
+        <span class="stat-label">Pending</span>
+        <span class="stat-value">
+          <span v-if="!isLoading">{{ pendingTasks }}</span>
+          <div v-else class="spinner"></div>
+        </span>
+      </div>
+      <div class="stat-item">
         <span class="stat-label">In Progress</span>
         <span class="stat-value">
           <span v-if="!isLoading">{{ inProgressTasks }}</span>
@@ -287,6 +294,9 @@ const inProgressTasks = computed(
 const completedTasks = computed(
   () => tasks.value.filter((task) => task.status === 'completed').length,
 )
+
+// Add pending tasks computation
+const pendingTasks = computed(() => tasks.value.filter((task) => task.status === 'pending').length)
 
 // Pagination
 const currentPage = ref(1)
@@ -552,7 +562,7 @@ svg {
 
 .stats-bar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
   width: 100%;
@@ -591,10 +601,14 @@ svg {
 }
 
 .stat-item:nth-child(2)::before {
-  background: linear-gradient(135deg, #f59e0b, #fbbf24); /* Yellow/Amber for In Progress */
+  background: linear-gradient(135deg, #ef4444, #f87171); /* Red gradient for Pending */
 }
 
 .stat-item:nth-child(3)::before {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24); /* Yellow/Amber for In Progress */
+}
+
+.stat-item:nth-child(4)::before {
   background: linear-gradient(135deg, #10b981, #34d399); /* Green for Completed */
 }
 
@@ -630,10 +644,14 @@ svg {
 }
 
 .stat-item:nth-child(2) {
-  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.1);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.1);
 }
 
 .stat-item:nth-child(3) {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.1);
+}
+
+.stat-item:nth-child(4) {
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.1);
 }
 

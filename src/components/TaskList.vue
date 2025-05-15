@@ -322,70 +322,58 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div
-      v-if="showDeleteModal"
-      class="modal-overlay"
-      @click="!isDeletingTask && (showDeleteModal = false)"
-    >
+    <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
       <div class="modal" @click.stop>
         <div class="modal-content">
           <h2>Delete Task</h2>
-          <p>Are you sure you want to delete "{{ taskToDelete?.title }}"?</p>
+          <p>Are you sure you want to delete "{{ itemToDelete?.title }}"?</p>
           <p class="warning-text">This action cannot be undone.</p>
           <div class="modal-actions">
-            <button class="cancel-btn" @click="showDeleteModal = false" :disabled="isDeletingTask">
-              Cancel
-            </button>
-            <button class="delete-btn" @click="confirmDelete" :disabled="isDeletingTask">
-              <span v-if="isDeletingTask" class="spinner"></span>
-              <span v-else>Delete</span>
-            </button>
+            <button class="cancel-btn" @click="closeDeleteModal">Cancel</button>
+            <button class="delete-btn" @click="confirmDelete">Delete</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Toast Notification -->
-    <div v-if="showToast" class="toast" :class="toastType" @click="showToast = false">
-      {{ toastMessage }}
+    <div v-if="toast" class="toast" :class="toast.type">
+      {{ toast.message }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
-import { taskService, type Task } from '../services/tasks'
+import { taskService, type Task } from '@/services/tasks'
 import TaskForm from './TaskForm.vue'
+import { useDeleteModal } from '@/composables/useDeleteModal'
+import { useToast } from '@/composables/useToast'
 
+// Composables
+const { showDeleteModal, itemToDelete, closeDeleteModal, openDeleteModal } = useDeleteModal()
+const { toast, showToast } = useToast()
+
+// State
 const tasks = ref<Task[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showModal = ref(false)
-const showDeleteModal = ref(false)
-const taskToDelete = ref<Task | null>(null)
-const isDeletingTask = ref(false)
-const showToast = ref(false)
-const toastMessage = ref('')
-const toastType = ref<'success' | 'error'>('success')
 const showEditModal = ref(false)
 const taskToEdit = ref<Task | null>(null)
+const showTooltip = ref(false)
 
-// Pagination state
+// Pagination
 const currentPage = ref(1)
 const itemsPerPage = 5
 const totalPages = computed(() => Math.ceil(tasks.value.length / itemsPerPage))
-
-// Get paginated tasks
 const paginatedTasks = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
   return tasks.value.slice(start, end)
 })
 
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-}
-
+// Methods
 const loadTasks = async () => {
   loading.value = true
   error.value = null
@@ -398,10 +386,42 @@ const loadTasks = async () => {
   }
 }
 
-onMounted(() => {
-  loadTasks()
-})
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+}
 
+const handleEdit = (task: Task) => {
+  taskToEdit.value = { ...task }
+  showEditModal.value = true
+}
+
+const handleDelete = (task: Task) => {
+  openDeleteModal(task)
+}
+
+const confirmDelete = async () => {
+  if (!itemToDelete.value) return
+
+  try {
+    await taskService.deleteTask(itemToDelete.value.id)
+    await loadTasks()
+
+    // Check if current page is now empty and not the first page
+    const lastPage = Math.ceil(tasks.value.length / itemsPerPage)
+    if (currentPage.value > lastPage && currentPage.value > 1) {
+      currentPage.value = lastPage
+    }
+
+    closeDeleteModal()
+    setTimeout(() => {
+      showToast('Task deleted successfully', 'success')
+    }, 100)
+  } catch (error) {
+    showToast('Failed to delete task', 'error')
+  }
+}
+
+// Utility functions
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -410,93 +430,50 @@ const formatDate = (date: string) => {
   })
 }
 
-const showTooltip = ref(false)
-
 const formatStatus = (status: string): string => {
-  switch (status) {
-    case 'pending':
-      return 'Pending'
-    case 'in_progress':
-      return 'In Progress'
-    case 'completed':
-      return 'Completed'
-    default:
-      return status.charAt(0).toUpperCase() + status.slice(1)
+  const statusMap = {
+    pending: 'Pending',
+    in_progress: 'In Progress',
+    completed: 'Completed',
   }
+  return statusMap[status as keyof typeof statusMap] || status
 }
 
 const getStatusColor = (status: string): string => {
-  switch (status) {
-    case 'pending':
-      return '#FF4B4B'
-    case 'in_progress':
-      return '#FFB800'
-    case 'completed':
-      return '#00B884'
-    default:
-      return '#64748b'
+  const colors = {
+    pending: '#FF4B4B',
+    in_progress: '#FFB800',
+    completed: '#00B884',
   }
+  return colors[status as keyof typeof colors] || '#64748b'
 }
 
-const handleEdit = (task: Task) => {
-  taskToEdit.value = { ...task } // Clone the task
-  showEditModal.value = true
+const truncateDescription = (description: string | null): string => {
+  if (!description) return 'No description'
+  return description.length > 250 ? `${description.slice(0, 250)}...` : description
 }
-
-const showToastMessage = (message: string, type: 'success' | 'error' = 'success') => {
-  toastMessage.value = message
-  toastType.value = type
-  showToast.value = true
-  setTimeout(() => {
-    showToast.value = false
-  }, 3000)
-}
-
-const confirmDelete = async () => {
-  if (!taskToDelete.value) return
-
-  isDeletingTask.value = true
-  try {
-    await taskService.deleteTask(taskToDelete.value.id)
-    await loadTasks()
-    showDeleteModal.value = false
-    taskToDelete.value = null
-    showToastMessage('Task deleted successfully')
-  } catch (error) {
-    showToastMessage('Failed to delete task', 'error')
-  } finally {
-    isDeletingTask.value = false
-  }
-}
-
-const handleDelete = (task: Task) => {
-  taskToDelete.value = task
-  showDeleteModal.value = true
-}
-
-// Add/remove body class when modal opens/closes
-watch([showModal, showEditModal], ([newShowModal, newShowEditModal]) => {
-  if (newShowModal || newShowEditModal) {
-    document.body.classList.add('modal-open')
-  } else {
-    document.body.classList.remove('modal-open')
-    document.body.style.overflow = '' // Reset overflow
-  }
-})
 
 const isOverdue = (dueDate: string): boolean => {
   const today = new Date()
-  today.setHours(0, 0, 0, 0) // Reset time to start of day
+  today.setHours(0, 0, 0, 0)
   const taskDueDate = new Date(dueDate)
   taskDueDate.setHours(0, 0, 0, 0)
   return taskDueDate < today
 }
 
-// Add truncate function
-const truncateDescription = (description: string | null): string => {
-  if (!description) return 'No description'
-  return description.length > 150 ? `${description.slice(0, 150)}...` : description
-}
+// Lifecycle
+onMounted(() => {
+  loadTasks()
+})
+
+// Watchers
+watch([showModal, showEditModal], ([newShowModal, newShowEditModal]) => {
+  if (newShowModal || newShowEditModal) {
+    document.body.classList.add('modal-open')
+  } else {
+    document.body.classList.remove('modal-open')
+  }
+})
 </script>
 
 <style scoped>
@@ -657,7 +634,7 @@ tr td:last-child {
   display: inline-block;
 }
 
-.status-badge.todo,
+.status-badge.pending,
 .status-badge.in_progress,
 .status-badge.completed,
 .status-badge.overdue {

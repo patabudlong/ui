@@ -6,21 +6,33 @@
       </router-link>
     </div>
 
-    <div class="nav-links">
+    <div class="nav-links" :class="{ 'is-open': isMenuOpen }">
       <router-link to="/" class="nav-link">Dashboard</router-link>
       <router-link to="/tasks" class="nav-link">Tasks</router-link>
       <div class="profile-icon">JT</div>
       <button class="logout-btn">Logout</button>
     </div>
+
+    <button class="hamburger" @click="toggleMenu" :class="{ 'is-active': isMenuOpen }">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </nav>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
 
-export default defineComponent({
+defineOptions({
   name: 'NavBar',
 })
+
+const isMenuOpen = ref(false)
+
+const toggleMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value
+}
 </script>
 
 <style scoped>
@@ -128,6 +140,44 @@ a.nav-link,
   .navbar {
     padding: 1rem;
   }
+
+  .logo-image {
+    height: 40px;
+  }
+
+  .nav-link {
+    font-size: 16px;
+  }
+
+  .logout-btn {
+    padding: 0.5rem 1rem;
+    font-size: 16px;
+  }
+
+  .profile-icon {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+}
+
+/* For even smaller screens */
+@media (max-width: 480px) {
+  .nav-links {
+    gap: 0.5rem;
+  }
+
+  .navbar-brand {
+    margin-left: 1rem;
+  }
+
+  .nav-links {
+    margin-right: 1rem;
+  }
+
+  .logo-image {
+    height: 30px;
+  }
 }
 
 .logout-btn {
@@ -173,6 +223,78 @@ a.nav-link,
   -webkit-user-select: none;
   user-select: none;
   -webkit-user-drag: none;
-  user-drag: none;
+}
+
+.hamburger {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 24px;
+  position: relative;
+  z-index: 100;
+}
+
+.hamburger span {
+  display: block;
+  position: absolute;
+  height: 3px;
+  width: 100%;
+  background: white;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.hamburger span:first-child {
+  top: 0;
+}
+
+.hamburger span:nth-child(2) {
+  top: 10px;
+}
+
+.hamburger span:last-child {
+  top: 20px;
+}
+
+.hamburger.is-active span:first-child {
+  transform: rotate(45deg);
+  top: 10px;
+}
+
+.hamburger.is-active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.is-active span:last-child {
+  transform: rotate(-45deg);
+  top: 10px;
+}
+
+@media (max-width: 1024px) {
+  .hamburger {
+    display: block;
+    margin-right: 2rem;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    height: 100vh;
+    width: 250px;
+    flex-direction: column;
+    background: #48526928;
+    padding: 80px 20px;
+    transition: right 0.3s ease;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .nav-links.is-open {
+    right: -2rem;
+  }
 }
 </style>

@@ -27,99 +27,102 @@
       </button>
     </div>
 
-    <!-- Desktop Table -->
-    <table class="task-table desktop-table">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Description</th>
-          <th>Due Date</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="task in tasks" :key="task.id">
-          <td>{{ task.title }}</td>
-          <td>{{ task.description }}</td>
-          <td>{{ formatDate(task.dueDate) }}</td>
-          <td>
-            <span class="status-badge" :class="task.status.toLowerCase()">
+    <div v-if="loading" class="loading-state">Loading tasks...</div>
+    <div v-else-if="error" class="error-state">
+      {{ error }}
+    </div>
+    <template v-else>
+      <!-- Desktop Table -->
+      <table class="task-table desktop-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="task in tasks" :key="task.id">
+            <td>{{ task.title }}</td>
+            <td>{{ task.description }}</td>
+            <td>{{ formatDate(task.created_at) }}</td>
+            <td>
+              <span class="status-badge" :class="task.status">
+                {{ task.status }}
+              </span>
+            </td>
+            <td>
+              <div class="task-actions">
+                <button class="action-btn edit" @click="handleEdit(task)">Edit</button>
+                <button class="action-btn delete" @click="handleDelete(task)">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Mobile Cards -->
+      <div class="mobile-cards">
+        <div v-for="task in tasks" :key="task.id" class="task-card">
+          <div class="card-header">
+            <h3>{{ task.title }}</h3>
+            <span class="status-badge" :class="task.status">
               {{ task.status }}
             </span>
-          </td>
-          <td>
+          </div>
+          <p class="card-description">{{ task.description }}</p>
+          <div class="card-footer">
+            <span class="due-date">Created: {{ formatDate(task.created_at) }}</span>
             <div class="task-actions">
-              <button class="action-btn edit">Edit</button>
-              <button class="action-btn delete">Delete</button>
+              <button class="action-btn edit" @click="handleEdit(task)">Edit</button>
+              <button class="action-btn delete" @click="handleDelete(task)">Delete</button>
             </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Mobile Cards -->
-    <div class="mobile-cards">
-      <div v-for="task in tasks" :key="task.id" class="task-card">
-        <div class="card-header">
-          <h3>{{ task.title }}</h3>
-          <span class="status-badge" :class="task.status.toLowerCase()">
-            {{ task.status }}
-          </span>
-        </div>
-        <p class="card-description">{{ task.description }}</p>
-        <div class="card-footer">
-          <span class="due-date">Due: {{ formatDate(task.dueDate) }}</span>
-          <div class="task-actions">
-            <button class="action-btn edit">Edit</button>
-            <button class="action-btn delete">Delete</button>
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { taskService, type Task } from '../services/tasks'
 
-interface Task {
-  id: number
-  title: string
-  description: string
-  dueDate: string
-  status: string
-}
+const tasks = ref<Task[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
 
-const tasks: Task[] = [
-  {
-    id: 1,
-    title: 'Complete Project Proposal',
-    description: 'Draft and finalize the project proposal for client review',
-    dueDate: '2024-03-20',
-    status: 'TODO',
-  },
-  {
-    id: 2,
-    title: 'Team Meeting',
-    description: 'Weekly sync-up with development team',
-    dueDate: '2024-03-15',
-    status: 'IN_PROGRESS',
-  },
-  {
-    id: 3,
-    title: 'Code Review',
-    description: 'Review pull requests for the new feature',
-    dueDate: '2024-03-10',
-    status: 'COMPLETED',
-  },
-]
+onMounted(async () => {
+  try {
+    tasks.value = await taskService.getTasks()
+  } catch (_error) {
+    error.value = 'Failed to load tasks'
+  } finally {
+    loading.value = false
+  }
+})
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString()
 }
 
 const showTooltip = ref(false)
+
+const handleEdit = async (task: Task) => {
+  // TODO: Implement edit functionality
+  console.log('Edit task:', task)
+}
+
+const handleDelete = async (task: Task) => {
+  try {
+    await taskService.deleteTask(task.id)
+    tasks.value = tasks.value.filter((t) => t.id !== task.id)
+  } catch (_error) {
+    alert('Failed to delete task')
+  }
+}
 </script>
 
 <style scoped>
@@ -447,5 +450,17 @@ tr td:last-child {
     right: 5px;
     transform: none;
   }
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.error-state {
+  color: #ef4444;
 }
 </style>

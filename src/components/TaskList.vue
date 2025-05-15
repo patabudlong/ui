@@ -124,7 +124,7 @@ const showTooltip = ref(false)
 
 <style scoped>
 .table-container {
-  width: 100%;
+  width: 150%;
   background: #0f172a;
   border-radius: 24px;
   padding: 2rem;

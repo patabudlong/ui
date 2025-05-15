@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay" @click.self="handleClose">
     <div class="modal">
       <div class="modal-header">
         <div class="header-content">
@@ -22,7 +22,7 @@
             </div>
           </div>
         </div>
-        <button class="close-btn" @click="$emit('close')">&times;</button>
+        <button class="close-btn" @click="handleClose">&times;</button>
       </div>
 
       <form @submit.prevent="handleSubmit" class="task-form" novalidate>
@@ -83,11 +83,23 @@
         <button type="submit" class="submit-btn">Create Task</button>
       </form>
     </div>
+
+    <!-- Confirmation Dialog -->
+    <div v-if="showConfirmDialog" class="confirm-dialog-overlay" @click.self="cancelClose">
+      <div class="confirm-dialog">
+        <h3>Discard Changes?</h3>
+        <p>You have unsaved changes. Are you sure you want to close?</p>
+        <div class="confirm-actions">
+          <button class="cancel-btn" @click="cancelClose">Cancel</button>
+          <button class="confirm-btn" @click="confirmClose">Discard</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 
 interface Task {
   title: string
@@ -96,18 +108,29 @@ interface Task {
   status: string
 }
 
-const task = reactive<Task>({
+const initialTask = {
   title: '',
   description: '',
   dueDate: '',
   status: 'TODO',
-})
+}
 
+const task = reactive({ ...initialTask })
 const showTooltip = ref(false)
+const showConfirmDialog = ref(false)
 const errors = reactive({
   title: '',
   dueDate: '',
   status: '',
+})
+
+const hasChanges = computed(() => {
+  return (
+    task.title !== initialTask.title ||
+    task.description !== initialTask.description ||
+    task.dueDate !== initialTask.dueDate ||
+    task.status !== initialTask.status
+  )
 })
 
 const validateForm = (): boolean => {
@@ -157,6 +180,25 @@ const handleSubmit = () => {
     // Add your submission logic here
   }
 }
+
+const handleClose = () => {
+  if (hasChanges.value) {
+    showConfirmDialog.value = true
+  } else {
+    emit('close')
+  }
+}
+
+const confirmClose = () => {
+  showConfirmDialog.value = false
+  emit('close')
+}
+
+const cancelClose = () => {
+  showConfirmDialog.value = false
+}
+
+const emit = defineEmits(['close'])
 </script>
 
 <style scoped>
@@ -612,5 +654,99 @@ select:invalid {
 .modal-overlay {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+}
+
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+  backdrop-filter: blur(4px);
+}
+
+.confirm-dialog {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 400px;
+  animation: scaleIn 0.2s ease-out;
+}
+
+.confirm-dialog h3 {
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+.confirm-dialog p {
+  color: #64748b;
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.confirm-actions button {
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn {
+  background: #f1f5f9;
+  color: #64748b;
+  border: none;
+}
+
+.cancel-btn:hover {
+  background: #e2e8f0;
+}
+
+.confirm-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.confirm-btn:hover {
+  background: #dc2626;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .confirm-dialog {
+    margin: 1rem;
+    padding: 1.25rem;
+  }
+
+  .confirm-actions button {
+    padding: 0.75rem 1rem;
+    flex: 1;
+  }
 }
 </style>

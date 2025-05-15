@@ -22,39 +22,25 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="login-container">
+  <div class="login-view">
     <div class="login-card">
-      <div class="card-header">
-        <h1>Welcome Back</h1>
-        <p>Sign in to continue to your dashboard</p>
+      <div class="logo">
+        <img src="@/assets/sapere-logo.PNG" alt="Sapere Logo" />
       </div>
+
+      <h1>Welcome Back</h1>
+      <p class="subtitle">Sign in to continue to your dashboard</p>
 
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
           <label for="email">Email</label>
           <div class="input-wrapper">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path
-                d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-              ></path>
-              <polyline points="22,6 12,13 2,6"></polyline>
-            </svg>
             <input
               type="email"
               id="email"
               v-model="email"
-              placeholder="Enter your email"
               required
+              placeholder="Enter your email"
             />
           </div>
         </div>
@@ -62,26 +48,12 @@ const handleLogin = async () => {
         <div class="form-group">
           <label for="password">Password</label>
           <div class="input-wrapper">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
             <input
               type="password"
               id="password"
               v-model="password"
-              placeholder="Enter your password"
               required
+              placeholder="Enter your password"
             />
           </div>
         </div>
@@ -94,43 +66,19 @@ const handleLogin = async () => {
           <a href="#" class="forgot-password">Forgot password?</a>
         </div>
 
-        <button type="submit" class="login-btn" :disabled="isLoading">
-          <span v-if="!isLoading">Sign In</span>
-          <span v-else class="loading">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <line x1="12" y1="2" x2="12" y2="6"></line>
-              <line x1="12" y1="18" x2="12" y2="22"></line>
-              <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-              <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-              <line x1="2" y1="12" x2="6" y2="12"></line>
-              <line x1="18" y1="12" x2="22" y2="12"></line>
-              <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-              <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-            </svg>
-          </span>
-        </button>
-      </form>
+        <button type="submit" class="login-button">Sign In</button>
 
-      <div class="signup-prompt">
-        <span>Don't have an account?</span>
-        <a href="#" class="signup-link">Sign up</a>
-      </div>
+        <div class="signup-prompt">
+          <span>Don't have an account?</span>
+          <a href="#" class="signup-link">Sign up</a>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <style scoped>
-.login-container {
+.login-view {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -141,157 +89,133 @@ const handleLogin = async () => {
 .login-card {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   padding: 2.5rem;
   width: 100%;
-  max-width: 420px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-}
-
-.card-header {
+  max-width: 380px;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-top: -5rem;
 }
 
-.card-header h1 {
-  color: #f8fafc;
+.logo {
+  margin-bottom: 1.5rem;
+}
+
+.logo img {
+  width: 80px;
+  height: auto;
+  filter: brightness(0) invert(1);
+}
+
+h1 {
   font-size: 1.75rem;
-  font-weight: 600;
   margin-bottom: 0.5rem;
 }
 
-.card-header p {
-  color: #94a3b8;
-  font-size: 1rem;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+.subtitle {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  text-align: left;
+  margin-bottom: 1.25rem;
 }
 
-label {
-  color: #e2e8f0;
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
   font-size: 0.95rem;
-  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: left;
 }
 
 .input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  transition: all 0.2s;
-}
-
-.input-wrapper:focus-within {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-}
-
-.input-wrapper svg {
-  color: #64748b;
+  border-radius: 8px;
 }
 
 input {
   width: 100%;
+  padding: 0.75rem 1rem;
   background: transparent;
   border: none;
-  color: #f8fafc;
-  font-size: 1rem;
-  outline: none;
+  color: white;
+  font-size: 0.95rem;
 }
 
 input::placeholder {
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .form-options {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
+  margin: 1.5rem 0;
+  padding-left: 0.25rem;
 }
 
 .remember-me {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #94a3b8;
-  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+}
+
+.remember-me input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  top: -1px;
+}
+
+.remember-me span {
+  display: block;
+  line-height: 1;
 }
 
 .forgot-password {
   color: #3b82f6;
   text-decoration: none;
-  transition: color 0.2s;
+  font-size: 0.9rem;
+  line-height: 1;
+  position: relative;
+  top: -1px;
 }
 
-.forgot-password:hover {
-  color: #60a5fa;
-}
-
-.login-btn {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  color: white;
+.login-button {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
   border: none;
-  border-radius: 12px;
-  padding: 1rem;
-  font-size: 1rem;
-  font-weight: 500;
+  background: #ff8a00;
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
-.login-btn:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.login-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.loading svg {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.login-button:hover {
+  background: #ff9d2f;
 }
 
 .signup-prompt {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   text-align: center;
-  color: #94a3b8;
-  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
 }
 
 .signup-link {
   color: #3b82f6;
   text-decoration: none;
   margin-left: 0.5rem;
-  transition: color 0.2s;
 }
 
 .signup-link:hover {
@@ -299,16 +223,30 @@ input::placeholder {
 }
 
 @media (max-width: 768px) {
-  .login-container {
+  .login-card {
+    padding: 2rem;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-view {
     padding: 1rem;
   }
 
   .login-card {
-    padding: 2rem;
+    padding: 1.5rem;
+    border-radius: 16px;
   }
 
-  .card-header h1 {
-    font-size: 1.5rem;
+  .form-options {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .forgot-password {
+    margin-left: 1.8rem;
   }
 }
 </style>

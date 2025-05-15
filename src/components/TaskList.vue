@@ -401,7 +401,8 @@ watch([showModal, showEditModal], ([newShowModal, newShowEditModal]) => {
 
 <style scoped>
 .table-container {
-  width: 150%;
+  width: 140%;
+  max-width: 140%;
   background: #0f172a;
   border-radius: 24px;
   padding: 2rem;

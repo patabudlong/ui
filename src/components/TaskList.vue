@@ -108,7 +108,11 @@
             :class="{ 'overdue-row': isOverdue(task.due_date) && task.status !== 'completed' }"
           >
             <td>{{ task.title }}</td>
-            <td>{{ task.description }}</td>
+            <td>
+              <span :class="{ 'empty-description': !task.description }">
+                {{ task.description || 'No description' }}
+              </span>
+            </td>
             <td>
               <span
                 :class="{ 'overdue-date': isOverdue(task.due_date) && task.status !== 'completed' }"
@@ -265,7 +269,9 @@
               {{ formatStatus(task.status) }}
             </span>
           </div>
-          <p class="card-description">{{ task.description }}</p>
+          <p class="card-description" :class="{ 'empty-description': !task.description }">
+            {{ task.description || 'No description' }}
+          </p>
           <div class="card-footer">
             <span class="due-date">Created: {{ formatDate(task.created_at) }}</span>
             <div class="task-actions">
@@ -1222,5 +1228,11 @@ body.modal-open {
 /* Ensure mobile cards also show overdue state */
 .task-card.overdue {
   background: rgba(239, 68, 68, 0.1);
+}
+
+.empty-description {
+  font-style: italic;
+  color: #64748b; /* light gray */
+  opacity: 0.8;
 }
 </style>

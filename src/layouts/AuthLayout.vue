@@ -10,7 +10,6 @@ export default defineComponent({
   <div class="auth-layout-wrapper">
     <div class="auth-layout">
       <div class="auth-container">
-        <div>Auth Layout Working</div>
         <router-view></router-view>
       </div>
     </div>
@@ -37,13 +36,9 @@ export default defineComponent({
 }
 
 .auth-container {
-  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
   padding: 2rem;
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin: 1rem;
 }
 </style>

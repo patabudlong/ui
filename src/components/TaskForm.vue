@@ -948,4 +948,31 @@ select:required {
 }
 
 /* Optional: remove the required attribute altogether from inputs */
+
+/* Style the date input */
+input[type='date'] {
+  color: #e2e8f0; /* Text color */
+  background: rgba(255, 255, 255, 0.05); /* Dark background */
+}
+
+/* Make only the calendar icon white */
+input[type='date']::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* Make icon white */
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+/* Remove color-scheme to keep default calendar colors */
+input[type='date']::-webkit-datetime-edit-fields-wrapper {
+  color: #e2e8f0; /* Text color */
+}
+
+input[type='date']::-webkit-datetime-edit {
+  color: #e2e8f0; /* Ensure text remains visible */
+}
+
+/* Hover effect for icon */
+input[type='date']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
 </style>

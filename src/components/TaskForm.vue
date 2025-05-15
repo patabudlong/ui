@@ -340,7 +340,6 @@ onMounted(() => {
   justify-content: center;
   align-items: flex-start;
   z-index: 1000;
-  backdrop-filter: blur(3px);
   padding: 2rem;
   overflow-y: auto;
   overflow-x: hidden;
@@ -852,7 +851,6 @@ select:invalid {
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  backdrop-filter: blur(4px);
   margin: 0;
   padding: 0;
   overflow: hidden; /* Prevent scrolling */

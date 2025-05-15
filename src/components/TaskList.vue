@@ -28,7 +28,12 @@
     </div>
 
     <!-- Task Form Modal -->
-    <TaskForm v-if="showModal" @close="showModal = false" @success="loadTasks()" />
+    <TaskForm
+      v-if="showModal"
+      @close="showModal = false"
+      @success="loadTasks()"
+      @showToast="showToastMessage"
+    />
 
     <!-- Table Structure Always Present -->
     <table class="task-table desktop-table">
@@ -36,7 +41,7 @@
         <tr>
           <th>Title</th>
           <th>Description</th>
-          <th>Created</th>
+          <th>Due Date</th>
           <th>Status</th>
           <th>Actions</th>
         </tr>
@@ -89,7 +94,7 @@
           <tr v-for="task in tasks" :key="task.id">
             <td>{{ task.title }}</td>
             <td>{{ task.description }}</td>
-            <td>{{ formatDate(task.created_at) }}</td>
+            <td>{{ formatDate(task.due_date) }}</td>
             <td>
               <span class="status-badge" :class="task.status">
                 <span
@@ -236,18 +241,32 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteModal" class="modal-overlay">
-      <div class="modal">
+    <div
+      v-if="showDeleteModal"
+      class="modal-overlay"
+      @click="!isDeletingTask && (showDeleteModal = false)"
+    >
+      <div class="modal" @click.stop>
         <div class="modal-content">
           <h2>Delete Task</h2>
           <p>Are you sure you want to delete "{{ taskToDelete?.title }}"?</p>
           <p class="warning-text">This action cannot be undone.</p>
           <div class="modal-actions">
-            <button class="cancel-btn" @click="showDeleteModal = false">Cancel</button>
-            <button class="delete-btn" @click="confirmDelete">Delete</button>
+            <button class="cancel-btn" @click="showDeleteModal = false" :disabled="isDeletingTask">
+              Cancel
+            </button>
+            <button class="delete-btn" @click="confirmDelete" :disabled="isDeletingTask">
+              <span v-if="isDeletingTask" class="spinner"></span>
+              <span v-else>Delete</span>
+            </button>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div v-if="showToast" class="toast" :class="toastType" @click="showToast = false">
+      {{ toastMessage }}
     </div>
   </div>
 </template>
@@ -263,6 +282,10 @@ const error = ref<string | null>(null)
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 const taskToDelete = ref<Task | null>(null)
+const isDeletingTask = ref(false)
+const showToast = ref(false)
+const toastMessage = ref('')
+const toastType = ref<'success' | 'error'>('success')
 
 const loadTasks = async () => {
   loading.value = true
@@ -281,36 +304,36 @@ onMounted(() => {
 })
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString()
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 const showTooltip = ref(false)
 
 const formatStatus = (status: string): string => {
   switch (status) {
-    case 'todo':
-      return 'To do'
+    case 'pending':
+      return 'Pending'
     case 'in_progress':
-      return 'In progress'
+      return 'In Progress'
     case 'completed':
       return 'Completed'
-    case 'overdue':
-      return 'Overdue'
     default:
-      return status
+      return status.charAt(0).toUpperCase() + status.slice(1)
   }
 }
 
 const getStatusColor = (status: string): string => {
   switch (status) {
-    case 'todo':
+    case 'pending':
       return '#FF4B4B'
     case 'in_progress':
       return '#FFB800'
     case 'completed':
       return '#00B884'
-    case 'overdue':
-      return '#FF0000'
     default:
       return '#64748b'
   }
@@ -321,16 +344,29 @@ const handleEdit = async (task: Task) => {
   console.log('Edit task:', task)
 }
 
+const showToastMessage = (message: string, type: 'success' | 'error' = 'success') => {
+  toastMessage.value = message
+  toastType.value = type
+  showToast.value = true
+  setTimeout(() => {
+    showToast.value = false
+  }, 3000)
+}
+
 const confirmDelete = async () => {
   if (!taskToDelete.value) return
 
+  isDeletingTask.value = true
   try {
     await taskService.deleteTask(taskToDelete.value.id)
     await loadTasks()
     showDeleteModal.value = false
     taskToDelete.value = null
+    showToastMessage('Task deleted successfully')
   } catch (error) {
-    alert('Failed to delete task')
+    showToastMessage('Failed to delete task', 'error')
+  } finally {
+    isDeletingTask.value = false
   }
 }
 
@@ -405,32 +441,33 @@ const handleDelete = (task: Task) => {
   text-align: left;
 }
 
-/* Make status column wider */
-.task-table th:nth-child(4),
-.task-table td:nth-child(4) {
-  min-width: 150px; /* Increased width for status column */
-  width: 150px;
+/* Make due date column center-aligned */
+.task-table th:nth-child(3),
+.task-table td:nth-child(3) {
+  text-align: center;
+  min-width: 120px; /* Ensure consistent width */
 }
 
 /* Optional: adjust other column widths if needed */
 .task-table th:nth-child(1),
 .task-table td:nth-child(1) {
-  width: 20%; /* Title column */
+  width: 20%; /* Title */
 }
 
 .task-table th:nth-child(2),
 .task-table td:nth-child(2) {
-  width: 35%; /* Description column */
+  width: 35%; /* Description */
 }
 
-.task-table th:nth-child(3),
-.task-table td:nth-child(3) {
-  width: 15%; /* Created column */
+.task-table th:nth-child(4),
+.task-table td:nth-child(4) {
+  width: 150px; /* Status */
 }
 
 .task-table th:nth-child(5),
 .task-table td:nth-child(5) {
-  width: 15%; /* Actions column */
+  width: 100px; /* Actions */
+  text-align: center;
 }
 
 th {
@@ -815,6 +852,8 @@ tr td:last-child {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -827,6 +866,13 @@ tr td:last-child {
   padding: 2rem;
   width: 90%;
   max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transform: scale(1);
+  transition: transform 0.2s ease;
+}
+
+.modal:hover {
+  transform: scale(1.02);
 }
 
 .modal-content {
@@ -882,5 +928,70 @@ tr td:last-child {
 
 .delete-btn:hover {
   background: #ef4444;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.delete-btn:disabled,
+.cancel-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.delete-btn {
+  min-width: 80px; /* Prevent button size change when showing spinner */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  z-index: 2000;
+  animation: slideIn 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.toast.success {
+  background: #00b884;
+}
+
+.toast.error {
+  background: #ef4444;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 </style>

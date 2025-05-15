@@ -49,7 +49,7 @@
             id="description"
             v-model="task.description"
             rows="4"
-            placeholder="Enter task description"
+            placeholder="Enter task description (Optional)"
             :disabled="isSubmitting"
           ></textarea>
         </div>
@@ -187,6 +187,8 @@ const validateForm = (): boolean => {
   return isValid
 }
 
+const emit = defineEmits(['close', 'success', 'showToast'])
+
 const handleSubmit = async () => {
   if (validateForm()) {
     isSubmitting.value = true
@@ -205,12 +207,12 @@ const handleSubmit = async () => {
       task.due_date = ''
       task.status = 'pending'
 
-      // Emit success event for parent to refresh task list
+      // Emit events
       emit('success')
+      emit('showToast', 'Task created successfully', 'success')
       emit('close')
     } catch (error) {
-      console.error('Failed to create task:', error)
-      alert('Failed to create task. Please try again.')
+      emit('showToast', 'Failed to create task', 'error')
     } finally {
       isSubmitting.value = false
     }
@@ -233,8 +235,6 @@ const confirmClose = () => {
 const cancelClose = () => {
   showConfirmDialog.value = false
 }
-
-const emit = defineEmits(['close', 'success'])
 </script>
 
 <style scoped>

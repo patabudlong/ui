@@ -10,7 +10,7 @@
       <router-link to="/" class="nav-link">Dashboard</router-link>
       <router-link to="/tasks" class="nav-link">Tasks</router-link>
       <div class="profile-icon">JT</div>
-      <button class="logout-btn">Logout</button>
+      <button class="logout-btn" @click="handleLogout">Logout</button>
     </div>
 
     <button class="hamburger" @click="toggleMenu" :class="{ 'is-active': isMenuOpen }">
@@ -19,19 +19,46 @@
       <span></span>
     </button>
   </nav>
+
+  <!-- Logout Dialog -->
+  <div v-if="showLogoutDialog" class="dialog-overlay">
+    <div class="dialog">
+      <div class="dialog-content">
+        <h2>Confirm Logout</h2>
+        <p>Are you sure you want to logout?</p>
+        <div class="dialog-actions">
+          <button class="cancel-btn" @click="showLogoutDialog = false">Cancel</button>
+          <button class="confirm-btn" @click="confirmLogout">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 defineOptions({
   name: 'NavBar',
 })
 
+const router = useRouter()
 const isMenuOpen = ref(false)
+const showLogoutDialog = ref(false)
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
+}
+
+const handleLogout = () => {
+  showLogoutDialog.value = true
+}
+
+const confirmLogout = () => {
+  localStorage.removeItem('isAuthenticated')
+  showLogoutDialog.value = false
+  router.push('/auth/login')
 }
 </script>
 
@@ -296,5 +323,76 @@ a.nav-link,
   .nav-links.is-open {
     right: -2rem;
   }
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: #1a2634;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dialog-content {
+  text-align: center;
+}
+
+.dialog-content h2 {
+  margin: 0 0 1rem;
+  color: white;
+  font-size: 1.5rem;
+}
+
+.dialog-content p {
+  margin: 0 0 1.5rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.cancel-btn,
+.confirm-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.confirm-btn {
+  background: #ff8a00;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background: #ff9d2f;
 }
 </style>

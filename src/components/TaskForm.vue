@@ -868,6 +868,11 @@ select:invalid {
   max-width: 400px;
   margin: 0;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.confirm-dialog:hover {
+  transform: scale(1.02); /* Grow effect */
 }
 
 .confirm-dialog h3 {
@@ -887,6 +892,7 @@ select:invalid {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
+  margin-top: 1.5rem;
 }
 
 .confirm-actions button {

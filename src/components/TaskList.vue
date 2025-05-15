@@ -1,7 +1,26 @@
 <template>
   <div class="table-container">
     <div class="table-header">
-      <h2>Tasks</h2>
+      <div class="header-content">
+        <h2>Tasks</h2>
+        <div class="description-container">
+          <p class="header-description">Manage your tasks and track their progress</p>
+          <div class="tooltip-container">
+            <button
+              class="info-icon"
+              @mouseenter="showTooltip = true"
+              @mouseleave="showTooltip = false"
+            >
+              ?
+            </button>
+            <div class="tooltip" v-if="showTooltip">
+              Create, edit, and track your tasks efficiently. Each task can be marked as TODO, IN
+              PROGRESS, or COMPLETED. Use the status indicators to monitor progress and the action
+              buttons to manage tasks.
+            </div>
+          </div>
+        </div>
+      </div>
       <button class="new-task-btn" @click="$emit('showModal')">
         <span class="plus-icon">+</span>
         New Task
@@ -62,6 +81,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+
 interface Task {
   id: number
   title: string
@@ -97,6 +118,8 @@ const tasks: Task[] = [
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString()
 }
+
+const showTooltip = ref(false)
 </script>
 
 <style scoped>
@@ -115,10 +138,22 @@ const formatDate = (date: string) => {
   margin-bottom: 2rem;
 }
 
-.table-header h2 {
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.header-content h2 {
   color: white;
   font-size: 1.75rem;
   font-weight: 500;
+  margin: 0;
+}
+
+.header-description {
+  color: #64748b;
+  font-size: 0.95rem;
   margin: 0;
 }
 
@@ -251,8 +286,12 @@ tr td:last-child {
 
   .table-header {
     flex-direction: column-reverse;
-    gap: 1rem;
+    gap: 1.5rem;
     align-items: flex-start;
+  }
+
+  .header-content {
+    width: 100%;
   }
 }
 
@@ -331,6 +370,82 @@ tr td:last-child {
   .card-footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+.description-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #64748b;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.info-icon:hover {
+  background: #2d3748;
+  color: #94a3b8;
+}
+
+.tooltip-container {
+  position: relative;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  width: 280px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+  line-height: 1.5;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #1e293b transparent transparent transparent;
+}
+
+@media (max-width: 768px) {
+  .tooltip {
+    width: 240px;
+    font-size: 0.8rem;
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+
+  .tooltip::after {
+    left: auto;
+    right: 5px;
+    transform: none;
   }
 }
 </style>

@@ -7,16 +7,24 @@ export default defineComponent({
   components: {
     Navbar,
   },
+  computed: {
+    isAuthRoute(): boolean {
+      return this.$route.path.startsWith('/auth')
+    },
+  },
 })
 </script>
 
 <template>
-  <div class="app">
+  <template v-if="!isAuthRoute">
     <Navbar />
     <main class="main-content">
       <router-view></router-view>
     </main>
-  </div>
+  </template>
+  <template v-else>
+    <router-view></router-view>
+  </template>
 </template>
 
 <style>
@@ -35,12 +43,7 @@ body {
   min-height: 100vh;
 }
 
-.app {
-  min-height: 100vh;
-}
-
 .main-content {
-  padding-top: 120px; /* Adjust this value based on your navbar height */
-  /* width: 150%; */
+  padding-top: 120px;
 }
 </style>

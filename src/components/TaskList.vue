@@ -234,6 +234,21 @@
         </div>
       </template>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-content">
+          <h2>Delete Task</h2>
+          <p>Are you sure you want to delete "{{ taskToDelete?.title }}"?</p>
+          <p class="warning-text">This action cannot be undone.</p>
+          <div class="modal-actions">
+            <button class="cancel-btn" @click="showDeleteModal = false">Cancel</button>
+            <button class="delete-btn" @click="confirmDelete">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -246,6 +261,8 @@ const tasks = ref<Task[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showModal = ref(false)
+const showDeleteModal = ref(false)
+const taskToDelete = ref<Task | null>(null)
 
 const loadTasks = async () => {
   loading.value = true
@@ -304,13 +321,22 @@ const handleEdit = async (task: Task) => {
   console.log('Edit task:', task)
 }
 
-const handleDelete = async (task: Task) => {
+const confirmDelete = async () => {
+  if (!taskToDelete.value) return
+
   try {
-    await taskService.deleteTask(task.id)
-    tasks.value = tasks.value.filter((t) => t.id !== task.id)
-  } catch (_error) {
+    await taskService.deleteTask(taskToDelete.value.id)
+    await loadTasks()
+    showDeleteModal.value = false
+    taskToDelete.value = null
+  } catch (error) {
     alert('Failed to delete task')
   }
+}
+
+const handleDelete = (task: Task) => {
+  taskToDelete.value = task
+  showDeleteModal.value = true
 }
 </script>
 
@@ -780,5 +806,81 @@ tr td:last-child {
 
 .new-task-btn:hover {
   background: #ff9d2f;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #1a2634;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+}
+
+.modal-content {
+  text-align: center;
+}
+
+.modal-content h2 {
+  margin: 0 0 1rem;
+  color: white;
+  font-size: 1.5rem;
+}
+
+.modal-content p {
+  margin: 0 0 1rem;
+  color: #e2e8f0;
+}
+
+.warning-text {
+  color: #ef4444;
+  font-size: 0.875rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.cancel-btn,
+.delete-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn {
+  background: #334155;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: #475569;
+}
+
+.delete-btn {
+  background: #dc2626;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #ef4444;
 }
 </style>

@@ -9,7 +9,7 @@
     <div class="nav-links" :class="{ 'is-open': isMenuOpen }">
       <router-link to="/" class="nav-link">Dashboard</router-link>
       <router-link to="/tasks" class="nav-link">Tasks</router-link>
-      <div class="profile-icon">JT</div>
+      <div class="profile-icon">{{ userInitials }}</div>
       <button class="logout-btn" @click="handleLogout">Logout</button>
     </div>
 
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 defineOptions({
@@ -46,6 +46,16 @@ defineOptions({
 const router = useRouter()
 const isMenuOpen = ref(false)
 const showLogoutDialog = ref(false)
+
+const userInitials = computed(() => {
+  const userName = localStorage.getItem('userName') || 'John Doe'
+  return userName
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+})
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
@@ -230,15 +240,13 @@ a.nav-link,
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #3b82f6;
+  background: #3b82f6;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
   font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
 }
 
 .logo-image {

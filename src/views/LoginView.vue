@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 
 const handleLogin = async () => {
   // Simple auth check
@@ -25,7 +26,7 @@ const handleLogin = async () => {
       </div>
 
       <h1>Welcome Back</h1>
-      <p class="subtitle">Sign in to continue to your dashboard</p>
+      <p class="subtitle">Sign in to continue to your task dashboard</p>
 
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
@@ -45,12 +46,33 @@ const handleLogin = async () => {
           <label for="password">Password</label>
           <div class="input-wrapper">
             <input
-              type="password"
+              :type="showPassword ? 'text' : 'password'"
               id="password"
               v-model="password"
               required
               placeholder="Enter your password"
             />
+            <button type="button" class="password-toggle" @click="showPassword = !showPassword">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  v-if="!showPassword"
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                ></path>
+                <line v-if="!showPassword" x1="1" y1="1" x2="23" y2="23"></line>
+                <path v-if="showPassword" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle v-if="showPassword" cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -128,13 +150,36 @@ h1 {
 }
 
 .input-wrapper {
+  position: relative;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.password-toggle:hover {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 input {
   width: 100%;
   padding: 0.75rem 1rem;
+  padding-right: 2.5rem;
   background: transparent;
   border: none;
   color: white;

@@ -66,6 +66,7 @@
       <div class="tasks-header">
         <div class="search-bar">
           <svg
+            v-if="!isSearching"
             xmlns="http://www.w3.org/2000/svg"
             width="20"
             height="20"
@@ -79,7 +80,13 @@
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="text" v-model="searchQuery" placeholder="Search tasks..." />
+          <div v-else class="spinner search-spinner"></div>
+          <input
+            type="text"
+            v-model="searchQuery"
+            placeholder="Search tasks..."
+            @input="handleSearch"
+          />
         </div>
         <div class="view-options">
           <button class="new-task-btn" @click="showTaskForm = true">
@@ -269,7 +276,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import TaskForm from '@/components/TaskForm.vue'
 import { useRouter } from 'vue-router'
 import { taskService, type Task } from '../services/tasks'
@@ -323,9 +330,6 @@ const paginatedTasks = computed(() => {
   const end = start + itemsPerPage
   return filteredTasks.value.slice(start, end)
 })
-
-// Update totalPages to use filtered tasks
-const totalPagesFiltered = computed(() => Math.ceil(filteredTasks.value.length / itemsPerPage))
 
 // Reset page when search changes
 watch(searchQuery, () => {
@@ -391,16 +395,19 @@ const confirmDelete = async () => {
   }
 }
 
+const handleFormSuccess = () => {
+  loadTasks()
+  // Show message before closing form
+  const message =
+    formMode.value === 'edit' ? 'Task updated successfully' : 'Task created successfully'
+  showToast(message, 'success')
+  closeForm()
+}
+
 const closeForm = () => {
   showTaskForm.value = false
   taskToEdit.value = null
-  formMode.value = 'create'
-}
-
-const handleFormSuccess = () => {
-  loadTasks()
-  closeForm()
-  showToast('Task updated successfully', 'success')
+  formMode.value = 'create' // Reset mode after showing message
 }
 
 const handlePageChange = (page: number) => {
@@ -425,6 +432,22 @@ const truncateText = (text: string, maxLength: number) => {
 const isOverdue = (dueDate: string): boolean => {
   return new Date(dueDate) < new Date()
 }
+
+const isSearching = ref(false)
+let searchTimeout: NodeJS.Timeout
+
+const handleSearch = () => {
+  isSearching.value = true
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    isSearching.value = false
+  }, 500)
+}
+
+// Clear timeout on component unmount
+onUnmounted(() => {
+  clearTimeout(searchTimeout)
+})
 </script>
 
 <style scoped>
@@ -1160,5 +1183,20 @@ svg {
 .task-item.overdue .due-date {
   color: #ef4444; /* Red text for due date */
   font-weight: 500;
+}
+
+.search-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

@@ -102,7 +102,7 @@
           </td>
         </tr>
         <template v-else>
-          <tr v-for="task in tasks" :key="task.id">
+          <tr v-for="task in paginatedTasks" :key="task.id">
             <td>{{ task.title }}</td>
             <td>{{ task.description }}</td>
             <td>{{ formatDate(task.due_date) }}</td>
@@ -156,6 +156,48 @@
         </template>
       </tbody>
     </table>
+
+    <!-- Modern Pagination -->
+    <div v-if="tasks.length > itemsPerPage" class="pagination">
+      <button
+        class="page-btn"
+        :disabled="currentPage === 1"
+        @click="handlePageChange(currentPage - 1)"
+        title="Previous page"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path
+            d="M15 18l-6-6 6-6"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+
+      <div class="page-numbers">
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          class="page-number"
+          :class="{ active: page === currentPage }"
+          @click="handlePageChange(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+
+      <button
+        class="page-btn"
+        :disabled="currentPage === totalPages"
+        @click="handlePageChange(currentPage + 1)"
+        title="Next page"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
 
     <!-- Mobile Cards with Similar Structure -->
     <div class="mobile-cards">
@@ -283,7 +325,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { taskService, type Task } from '../services/tasks'
 import TaskForm from './TaskForm.vue'
 
@@ -299,6 +341,22 @@ const toastMessage = ref('')
 const toastType = ref<'success' | 'error'>('success')
 const showEditModal = ref(false)
 const taskToEdit = ref<Task | null>(null)
+
+// Pagination state
+const currentPage = ref(1)
+const itemsPerPage = 5
+const totalPages = computed(() => Math.ceil(tasks.value.length / itemsPerPage))
+
+// Get paginated tasks
+const paginatedTasks = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return tasks.value.slice(start, end)
+})
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+}
 
 const loadTasks = async () => {
   loading.value = true
@@ -1046,6 +1104,72 @@ body.modal-open {
   .toast {
     min-width: 90%;
     margin: 0 auto;
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding: 1rem;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.page-btn,
+.page-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.page-btn {
+  background: transparent;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-btn:not(:disabled):hover,
+.page-number:not(.active):hover {
+  background: #2d3748;
+  color: #e2e8f0;
+}
+
+.page-number.active {
+  background: #f89c1c;
+  color: white;
+  font-weight: 500;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .pagination {
+    gap: 0.25rem;
+  }
+
+  .page-btn,
+  .page-number {
+    min-width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.813rem;
   }
 }
 </style>

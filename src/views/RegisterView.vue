@@ -1,56 +1,67 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '@/services/auth'
+import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
+const { showToast } = useToast()
+
+const name = ref('')
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const showPassword = ref(false)
-const isConnected = ref(false)
+const showConfirmPassword = ref(false)
 const loading = ref(false)
-const showErrorDialog = ref(false)
 
-const handleLogin = async () => {
+const handleRegister = async () => {
+  if (password.value !== confirmPassword.value) {
+    showToast('Passwords do not match', 'error')
+    return
+  }
+
   try {
     loading.value = true
-    const response = await authService.login(email.value, password.value)
-    localStorage.setItem('isAuthenticated', 'true')
-    localStorage.setItem('userName', response.user.name)
-    router.push('/')
-  } catch (_error) {
-    showErrorDialog.value = true
+    await authService.register({
+      name: name.value,
+      email: email.value,
+      password: password.value,
+    })
+    showToast('Registration successful', 'success')
+    router.push('/login')
+  } catch (error) {
+    showToast('Registration failed', 'error')
   } finally {
     loading.value = false
   }
 }
-
-onMounted(async () => {
-  try {
-    await authService.checkConnection()
-    isConnected.value = true
-    // console.log('Connected to server')
-  } catch (_error) {
-    isConnected.value = false
-    // alert('Cannot connect to server')
-  }
-})
 </script>
 
 <template>
-  <div class="login-view">
-    <div class="login-card">
-      <div class="connection-status" :class="{ connected: isConnected }">
-        {{ isConnected ? '🟢 Connected' : '🔴 Not Connected' }}
-      </div>
+  <div class="register-view">
+    <div class="register-card">
       <div class="logo">
         <img src="@/assets/sapere-logo.PNG" alt="Sapere Logo" />
       </div>
 
-      <h1>Welcome Back</h1>
-      <p class="subtitle">Sign in to continue to your task dashboard</p>
+      <h1>Create Account</h1>
+      <p class="subtitle">Sign up to start managing your tasks</p>
 
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form @submit.prevent="handleRegister" class="register-form">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="name"
+              v-model="name"
+              required
+              placeholder="Enter your full name"
+            />
+          </div>
+        </div>
+
         <div class="form-group">
           <label for="email">Email</label>
           <div class="input-wrapper">
@@ -98,42 +109,62 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="form-options">
-          <label class="remember-me">
-            <input type="checkbox" />
-            <span>Remember me</span>
-          </label>
-          <a href="#" class="forgot-password">Forgot password?</a>
-        </div>
-
-        <button type="submit" class="login-button" :disabled="loading">
-          {{ loading ? 'Signing in...' : 'Sign In' }}
-        </button>
-
-        <div class="signup-prompt">
-          <span>Don't have an account?</span>
-          <router-link to="/auth/register" class="signup-link">Sign up</router-link>
-        </div>
-      </form>
-    </div>
-
-    <!-- Error Dialog -->
-    <div v-if="showErrorDialog" class="dialog-overlay">
-      <div class="dialog">
-        <div class="dialog-content">
-          <h2>Login Failed</h2>
-          <p>Invalid email or password. Please try again.</p>
-          <div class="dialog-actions">
-            <button class="confirm-btn" @click="showErrorDialog = false">OK</button>
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="input-wrapper">
+            <input
+              :type="showConfirmPassword ? 'text' : 'password'"
+              id="confirmPassword"
+              v-model="confirmPassword"
+              required
+              placeholder="Confirm your password"
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              @click="showConfirmPassword = !showConfirmPassword"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  v-if="!showConfirmPassword"
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                ></path>
+                <line v-if="!showConfirmPassword" x1="1" y1="1" x2="23" y2="23"></line>
+                <path
+                  v-if="showConfirmPassword"
+                  d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                ></path>
+                <circle v-if="showConfirmPassword" cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
           </div>
         </div>
-      </div>
+
+        <button type="submit" class="register-button" :disabled="loading">
+          {{ loading ? 'Creating Account...' : 'Create Account' }}
+        </button>
+
+        <div class="login-prompt">
+          <span>Already have an account?</span>
+          <router-link to="/auth/login" class="login-link">Sign in</router-link>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <style scoped>
-.login-view {
+.register-view {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -141,7 +172,7 @@ onMounted(async () => {
   padding: 2rem;
 }
 
-.login-card {
+.register-card {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border-radius: 24px;
@@ -227,54 +258,7 @@ input::placeholder {
   color: rgba(255, 255, 255, 0.3);
 }
 
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 1.5rem 0;
-  padding-left: 0.25rem;
-}
-
-.remember-me {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.9rem;
-}
-
-.remember-me input[type='checkbox'] {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  padding: 0;
-  position: relative;
-  top: -1px;
-}
-
-.remember-me span {
-  display: block;
-  line-height: 1;
-}
-
-.forgot-password {
-  color: #3b82f6;
-  text-decoration: none;
-  font-size: 0.9rem;
-  line-height: 1;
-  position: relative;
-  top: -1px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-.forgot-password:hover {
-  color: #3b82f6;
-  background: transparent;
-}
-
-.login-button {
+.register-button {
   width: 100%;
   padding: 0.75rem;
   border-radius: 8px;
@@ -285,127 +269,51 @@ input::placeholder {
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  margin-top: 1rem;
 }
 
-.login-button:hover {
+.register-button:hover {
   background: #ff9d2f;
 }
 
-.signup-prompt {
+.register-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-prompt {
   margin-top: 1.5rem;
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
 }
 
-.signup-link {
+.login-link {
   color: #3b82f6;
   text-decoration: none;
   margin-left: 0.5rem;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
 }
 
-.signup-link:hover {
-  color: #3b82f6;
-  background: transparent;
-}
-
-.connection-status {
-  position: absolute;
-  top: 1rem;
-  right: 2rem;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.connection-status.connected {
-  color: #4caf50;
+.login-link:hover {
+  color: #60a5fa;
 }
 
 @media (max-width: 768px) {
-  .login-card {
+  .register-card {
     padding: 2rem;
     margin-top: 0;
   }
 }
 
 @media (max-width: 480px) {
-  .login-view {
+  .register-view {
     padding: 1rem;
   }
 
-  .login-card {
+  .register-card {
     padding: 1.5rem;
     border-radius: 16px;
   }
-
-  .form-options {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-
-  .forgot-password {
-    margin-left: 1.8rem;
-  }
-}
-
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.dialog {
-  background: #1a2634;
-  border-radius: 12px;
-  padding: 2rem;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.dialog-content {
-  text-align: center;
-}
-
-.dialog-content h2 {
-  margin: 0 0 1rem;
-  color: white;
-  font-size: 1.5rem;
-}
-
-.dialog-content p {
-  margin: 0 0 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.dialog-actions {
-  display: flex;
-  justify-content: center;
-}
-
-.confirm-btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  border: none;
-  background: #ff8a00;
-  color: white;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.confirm-btn:hover {
-  background: #ff9d2f;
 }
 </style>

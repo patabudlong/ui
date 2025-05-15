@@ -9,6 +9,7 @@ import HomeView from '../views/HomeView.vue'
 import TasksView from '../views/TasksView.vue'
 import LoginView from '../views/LoginView.vue'
 import AuthLayout from '../layouts/AuthLayout.vue'
+import RegisterView from '@/views/RegisterView.vue'
 
 // Auth guard
 const requireAuth = (
@@ -49,6 +50,11 @@ const routes: RouteRecordRaw[] = [
         name: 'login',
         component: LoginView,
         beforeEnter: requireAuth,
+      },
+      {
+        path: 'register',
+        name: 'register',
+        component: RegisterView,
       },
       {
         path: '',

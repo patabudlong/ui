@@ -112,7 +112,7 @@ onMounted(async () => {
 
         <div class="signup-prompt">
           <span>Don't have an account?</span>
-          <a href="#" class="signup-link">Sign up</a>
+          <router-link to="/auth/register" class="signup-link">Sign up</router-link>
         </div>
       </form>
     </div>
@@ -121,7 +121,7 @@ onMounted(async () => {
     <div v-if="showErrorDialog" class="dialog-overlay">
       <div class="dialog">
         <div class="dialog-content">
-          <h2>Login Failed</h2>
+          <h2 class="error-title">Login Failed</h2>
           <p>Invalid email or password. Please try again.</p>
           <div class="dialog-actions">
             <button class="confirm-btn" @click="showErrorDialog = false">OK</button>
@@ -407,5 +407,9 @@ input::placeholder {
 
 .confirm-btn:hover {
   background: #ff9d2f;
+}
+
+.error-title {
+  color: #ef4444 !important;
 }
 </style>

@@ -1,6 +1,45 @@
-# ui
+# Sapere Task Manager
 
-This template should help get you started developing with Vue 3 in Vite.
+A modern task management application built with Vue 3, TypeScript, and a sleek dark theme interface.
+
+## Features
+
+- **User Authentication**
+
+  - User registration with validation
+  - Secure login system
+  - Password strength requirements
+  - Real-time form validation
+
+- **Task Management**
+
+  - Create, edit, and delete tasks
+  - Task status tracking
+  - Responsive task interface
+
+- **Modern UI/UX**
+
+  - Dark theme design
+  - Responsive layout for all devices
+  - Smooth animations and transitions
+  - Toast notifications
+  - Error handling with modals
+
+- **Security**
+  - Protected routes with authentication guards
+  - CSRF token protection
+  - Secure API integration
+
+## Tech Stack
+
+- **Frontend**: Vue 3 with Composition API
+- **Language**: TypeScript
+- **Styling**: CSS3 with custom properties
+- **Routing**: Vue Router 4
+- **HTTP Client**: Axios
+- **Build Tool**: Vite
+
+## Project Structure
 
 ## Recommended IDE Setup
 
